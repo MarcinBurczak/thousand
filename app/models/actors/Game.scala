@@ -1,7 +1,7 @@
 package models.actors
 
 import akka.actor.{Props, Actor}
-import models.{ThousandGame}
+import models.{Card, ThousandGame}
 
 /**
  * @author Marcin Burczak
@@ -25,3 +25,8 @@ object Game {
   def props(player1: Login, player2: Login) =
     Props(classOf[Game],  player1, player2)
 }
+
+class Player(val player1: Login,
+             var gameScore: Int,
+             var score: Int,
+             var cards: Seq[Card])

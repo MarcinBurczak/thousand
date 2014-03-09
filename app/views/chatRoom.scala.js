@@ -7,9 +7,8 @@ $(function() {
 
     var sendMessage = function() {
         chatSocket.send(JSON.stringify(
-            {text: $("#talk").val()}
+            {type: "invite", user: $("#members").val()}
         ))
-        $("#talk").val('')
     }
 
     var receiveEvent = function(event) {
@@ -25,13 +24,16 @@ $(function() {
             $("#onChat").show()
         }
 
-        // Create the message element
-        var el = $('<div class="message"><span></span><p></p></div>')
-        $("span", el).text(data.user)
-        $("p", el).text(data.message)
-        $(el).addClass(data.kind)
-        if(data.user == '@username') $(el).addClass('me')
-        $('#messages').append(el)
+        //TODO dodanie ifologii na podstawie typu wiadomości
+        // Dodanie zakładki
+        var gameTabsLi = $('<li><a href="#profile" data-toggle="tab">...</a></li>')
+        var gameTabsDiv = $('<div class="tab-pane" id="profile">...</div>')
+
+        $("a", gameTabsLi).text(data.from)
+        $("div", gameTabsDiv).text(data.from)
+
+        $('#gameTabsUl').append(gameTabsLi)
+        $('#gameTabsDiv').append(gameTabsDiv)
 
         // Update the members list
         $("#members").html('')
@@ -42,14 +44,7 @@ $(function() {
         })
     }
 
-    var handleReturnKey = function(e) {
-        if(e.charCode == 13 || e.keyCode == 13) {
-            e.preventDefault()
-            sendMessage()
-        }
-    }
-
-    $("#talk").keypress(handleReturnKey)
+    $("#inviteButton").click(sendMessage)
 
     chatSocket.onmessage = receiveEvent
 

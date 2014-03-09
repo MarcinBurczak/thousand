@@ -21,10 +21,11 @@ class Server extends Actor {
       users += (login -> inOut)
 
       sender ! Connected(inOut._1)
-      users.values.foreach(_._2.push(UsersList(users.keys.toSeq).toJson))
+      pushUserList
     }
 
     case invitation: Invitation =>
+      println("Server: " + invitation)
       users(invitation.to)._2.push(invitation.toJson)
 
     case accept: Accept => {
@@ -35,7 +36,16 @@ class Server extends Actor {
       users(gameMessage.to)._2.push(gameMessage.toJson)
     }
 
-    case _ => println("Any")
+    case Quit(login) => {
+      users -= login
+      pushUserList
+    }
+
+    case a: Any => println("Any: " + a)
+  }
+
+  def pushUserList {
+    users.values.foreach(_._2.push(UsersList(users.keys.toSeq).toJson))
   }
 }
 

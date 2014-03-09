@@ -14,14 +14,20 @@
     
     <div id="onChat" class="row">
         <div class="span10" id="main">
-            <div id="messages">
+            <ul id="gameTabsUl" class="nav nav-tabs">
+                <li class="active"><a href="#home" data-toggle="tab">Home</a></li>
+            </ul>
+
+            <!-- Tab panes -->
+            <div id="gameTabsDiv" class="tab-content">
+                <div class="tab-pane active" id="home">...</div>
             </div>
-            <textarea id="talk"></textarea>
         </div>
         <div class="span4">
             <h2>Members</h2>
             <select id="members" multiple class="form-control">
             </select>
+            <input id="inviteButton" class="btn btn-default" type="submit" value="Zaproś"/>
         </div>
     </div>
     

@@ -19,14 +19,20 @@ object Client {
 
   def join(login: Login, server: ActorRef) = {
 
-    //TODO: tu rozparsowujemy jsona na wiadomości do servera
-
     server ? login map {
 
       case Connected(channel) => {
         val iteratee = Iteratee.foreach[JsValue] { event =>
-          Logger("client").info(event.toString)
-          //server ! Talk(login, (event \ "text").as[String])
+          println(event)
+
+          val typ = (event \ "type").as[String]
+          typ match {
+            case "invite" => {
+              val user = (event \ "user")(0).as[String]
+              server ! Invitation(login, Login(user))
+            }
+            case _ => println("O nie")
+          }
         }.map { _ =>
           server ! Quit(login)
         }

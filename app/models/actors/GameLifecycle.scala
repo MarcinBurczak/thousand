@@ -21,34 +21,23 @@ case class Player(player: ActorRef,
     copy(cards = cards ++ talone)
 }
 
-case class GameData(player1: Player,
-                    player2: Player,
+case class GameData(active: Player,
+                    pasive: Player,
                     talone1: Seq[Card],
                     talone2: Seq[Card],
-                    auction: Int = 0,
-                    activePlayer: Player = player1) {
-  def withActivePlayer(player: ActorRef) =
-    copy(activePlayer = playerOf(player))
+                    auction: Int = 0) {
+  def switch = copy(active = pasive, pasive = active)
 
-  def playerOf(actor: ActorRef): Player =
-    if (player1.player == actor) player1 else player2
+  def oponent = pasive.player
 
   def withAuction(auction: Int) =
     copy(auction = auction)
 
-  def addTaloneToPlayerCards(actor: ActorRef, no: Int) = {
-    val player = playerOf(actor)
-    val newPlayer = player.addTalone(taloneOf(no))
-
-    if (player == player1) copy(player1 = newPlayer)
-    else copy(player2 = newPlayer)
-  }
+  def selectTalone(no: Int) =
+    copy(active = active.addTalone(taloneOf(no)))
 
   def taloneOf(no: Int): Seq[Card] =
     if (no == 0) talone1 else talone2
-
-  def cardsOf(actor: ActorRef) =
-    playerOf(actor).cards
 }
 
 object GameData {
@@ -67,28 +56,28 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   with LoggingFSM[State, GameData] {
 
   private val gameData = GameData(actor1, actor2)
-  actor1 ! gameData.player1.cards
-  actor2 ! gameData.player2.cards
+  actor1 ! gameData.active.cards
+  actor2 ! gameData.pasive.cards
 
   startWith(NewDeal, gameData)
 
   when(NewDeal) {
     case Event(AuctionPas(from, to), data) => {
-      val oponent = oponentOf(sender)
+      val oponent = data.pasive.player
       oponent ! NewDeal //TODO message type
-      goto(SelectingTalone) using data.withActivePlayer(oponent)
+      goto(SelectingTalone) using data.switch
     }
     case Event(a: Auction, data) => {
-      val oponent = oponentOf(sender)
+      val oponent = data.pasive.player
       oponent ! NewDeal //TODO message type
-      stay using data.withAuction(a.auction)
+      stay using data.withAuction(a.auction).switch
     }
   }
 
   when(SelectingTalone) {
     case Event(no: Int, data) => {
-      val newGameData = data.addTaloneToPlayerCards(sender, no)
-      sender ! newGameData.cardsOf(sender)
+      val newGameData = data.selectTalone(no)
+      sender ! newGameData.active.cards
       goto(DiscardingTwoCards) using newGameData
     }
   }
@@ -98,9 +87,6 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   }
 
   initialize()
-
-  private def oponentOf(actor: ActorRef) =
-    if (actor == actor1) actor2 else actor1
 }
 
 object GameLifecycle {

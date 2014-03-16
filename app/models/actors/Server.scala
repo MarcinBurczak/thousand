@@ -29,7 +29,7 @@ class Server extends Actor {
       users(invitation.to)._2.push(invitation.toJson)
 
     case accept: Accept => {
-      games += ((accept.from, accept.to) -> context.actorOf(Game.props(accept.from, accept.to)))
+      ???
     }
 
     case gameMessage: GameMessage => {

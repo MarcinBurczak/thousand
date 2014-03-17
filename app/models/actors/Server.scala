@@ -69,7 +69,10 @@ trait GameMessage {
 case class NewGame(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
 case class Invitation(from: Login, to: Login) extends GameMessage
 case class Accept(from: Login, to: Login) extends GameMessage
-case class Auction(from: Login, to: Login, auction: Int) extends GameMessage
+case class Auction(from: Login, to: Login, auction: Int) extends GameMessage {
+  def switch = copy(from = to, to = from)
+}
+
 case class AuctionPas(from: Login, to: Login) extends GameMessage
 case class SelectedTalone(from: Login, to: Login, taloneNo: Int) extends GameMessage
 case class TaloneCards(from: Login, to: Login, talone: Talone) extends GameMessage

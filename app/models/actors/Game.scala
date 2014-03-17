@@ -41,7 +41,7 @@ case class GameData(active: Player,
 }
 
 object GameData {
-  def apply(actor1: ActorRef, actor2: ActorRef) = {
+  def apply(actor1: ActorRef, actor2: ActorRef): GameData = {
     val pack = ThousandGame.shufflePack()
     val player1 = Player(actor1, pack.take(10))
     val player2 = Player(actor2, pack.slice(10, 20))
@@ -64,12 +64,12 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   when(NewDeal) {
     case Event(AuctionPas(from, to), data) => {
       val oponent = data.pasive.player
-      oponent ! NewDeal //TODO message type
+      oponent ! YourTurn(from)
       goto(SelectingTalone) using data.switch
     }
     case Event(a: Auction, data) => {
       val oponent = data.pasive.player
-      oponent ! NewDeal //TODO message type
+      oponent ! a.switch
       stay using data.withAuction(a.auction).switch
     }
   }
@@ -83,7 +83,10 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   }
 
   when(DiscardingTwoCards) {
-    ???
+    case Event(no: Int, data) => {
+      println(data)
+      stay
+    }
   }
 
   initialize()

@@ -26,7 +26,7 @@ case class GameData(active: Player,
                     talone1: Seq[Card],
                     talone2: Seq[Card],
                     auction: Int = 0) {
-  def switch = copy(active = pasive, pasive = active)
+  def swapPlayers = copy(active = pasive, pasive = active)
 
   def oponent = pasive.player
 
@@ -62,23 +62,22 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   startWith(NewDeal, gameData)
 
   when(NewDeal) {
-    case Event(AuctionPas(from, to), data) => {
+    case Event(AuctionGiveUp(from, to), data) => {
       val oponent = data.pasive.player
-      oponent ! YourTurn(from)
-      goto(SelectingTalone) using data.switch
+      oponent ! YourTurn(from, to)
+      goto(SelectingTalone) using data.swapPlayers
     }
     case Event(a: Auction, data) => {
       val oponent = data.pasive.player
       oponent ! a.switch
-      stay using data.withAuction(a.auction).switch
+      stay using data.withAuction(a.auction).swapPlayers
     }
   }
 
   when(SelectingTalone) {
     case Event(no: Int, data) => {
       val newGameData = data.selectTalone(no)
-      sender ! newGameData.active.cards
-      goto(DiscardingTwoCards) using newGameData
+      goto(DiscardingTwoCards) using(newGameData) replying(newGameData.active.cards)
     }
   }
 

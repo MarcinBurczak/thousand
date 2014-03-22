@@ -60,12 +60,12 @@ case class UsersList(logins: Seq[Login]) {
       logins.map(_.username).map(JsString)))
 }
 
-case class YourTurn(oponent: Login)
 trait GameMessage {
   val from: Login
   val to: Login
   val toJson: JsValue = Json.obj("from" -> from.username, "to" -> to.username)
 }
+case class YourTurn(from: Login, to: Login) extends GameMessage
 case class NewGame(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
 case class Invitation(from: Login, to: Login) extends GameMessage
 case class Accept(from: Login, to: Login) extends GameMessage
@@ -73,7 +73,7 @@ case class Auction(from: Login, to: Login, auction: Int) extends GameMessage {
   def switch = copy(from = to, to = from)
 }
 
-case class AuctionPas(from: Login, to: Login) extends GameMessage
+case class AuctionGiveUp(from: Login, to: Login) extends GameMessage
 case class SelectedTalone(from: Login, to: Login, taloneNo: Int) extends GameMessage
 case class TaloneCards(from: Login, to: Login, talone: Talone) extends GameMessage
 case class DiscardedCards(from: Login, to: Login, cards: Seq[Card]) extends GameMessage

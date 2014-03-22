@@ -16,6 +16,9 @@ class GameSpec extends Specification {
 
   "Game lifecycle" should {
 
+    val marcin = Login("Marcin")
+    val tomek = Login("Tomek")
+
     "fsm test" in new Actors {
 
       val player1 = TestProbe()
@@ -27,19 +30,19 @@ class GameSpec extends Specification {
       player1.expectMsgClass(classOf[List[Card]])
       player2.expectMsgClass(classOf[List[Card]])
 
-      game.tell(Auction(Login("Marcin"), Login("Tomek"), 110), player1.ref)
+      game.tell(Auction(marcin, tomek, 110), player1.ref)
 
-      player2.expectMsg(Auction(Login("Tomek"), Login("Marcin"), 110))
+      player2.expectMsg(Auction(tomek, marcin, 110))
 
-      game.tell(Auction(Login("Tomek"), Login("Marcin"), 120), player2.ref)
+      game.tell(Auction(tomek, marcin, 120), player2.ref)
 
-      player1.expectMsg(Auction(Login("Marcin"), Login("Tomek"), 120))
+      player1.expectMsg(Auction(marcin, tomek, 120))
 
       game.stateName must be(NewDeal)
 
-      game.tell(AuctionPas(Login("Tomek"), Login("Marcin")), player1.ref)
+      game.tell(AuctionGiveUp(tomek, marcin), player1.ref)
 
-      player2.expectMsg(YourTurn(Login("Tomek")))
+      player2.expectMsg(YourTurn(tomek, marcin))
 
       game.stateName must be(SelectingTalone)
     }

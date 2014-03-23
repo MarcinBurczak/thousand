@@ -8,7 +8,7 @@ import models.{Queen, King, Color, Card}
  * @since 23.03.14
  */
 case class Player(player: ActorRef,
-                  cards: Seq[Card],
+                  cards: Seq[Card] = Nil,
                   gameScore: Int = 0,
                   dealScore: Int = 0) {
   def addTalone(talone: Seq[Card]): Player =
@@ -22,4 +22,7 @@ case class Player(player: ActorRef,
 
   def remove(card: Card): Player =
     copy(cards = cards.filterNot(_ == card))
+
+  def addDealScore(score: Int): Player =
+    copy(dealScore = dealScore + score)
 }

@@ -8,7 +8,7 @@ import util.Random
  */
 object ThousandGame {
 
-  val trump = Map(
+  val trump = Map[Color, Int](
     Heart -> 100,
     Diamond -> 80,
     Clube -> 60,

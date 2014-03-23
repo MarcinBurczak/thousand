@@ -1,13 +1,8 @@
-package models.actors
+package models.game
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{TestProbe, TestKit}
 import org.specs2.mutable.Specification
-import models._
-import actors._
-import actors.Login
-import actors.NewGame
-import actors.UsersList
 import org.specs2.specification.Scope
 
 /**

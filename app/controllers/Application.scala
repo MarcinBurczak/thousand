@@ -5,7 +5,7 @@ import play.api.Play.current
 import libs.concurrent.Akka
 import libs.json.JsValue
 import play.api.mvc._
-import models.actors.{Login, Client, Server}
+import models.game.{Login, Client, Server}
 import akka.actor.Props
 
 object Application extends Controller {

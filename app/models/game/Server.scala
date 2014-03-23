@@ -1,4 +1,4 @@
-package models.actors
+package models.game
 
 import akka.actor.{ActorRef, Actor}
 import models.{Talone, Card}

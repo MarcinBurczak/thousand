@@ -1,4 +1,4 @@
-package models.actors
+package models.game
 
 import org.specs2.mutable.Specification
 import akka.testkit.{TestFSMRef, TestProbe, TestKit}

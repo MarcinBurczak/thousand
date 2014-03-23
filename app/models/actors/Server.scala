@@ -69,13 +69,13 @@ case class YourTurn(from: Login, to: Login) extends GameMessage
 case class NewGame(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
 case class Invitation(from: Login, to: Login) extends GameMessage
 case class Accept(from: Login, to: Login) extends GameMessage
-case class Auction(from: Login, to: Login, auction: Int) extends GameMessage {
-  def switch = copy(from = to, to = from)
+case class RaiseAuction(from: Login, to: Login, value: Int) extends GameMessage {
+  def swapFromTo = copy(from = to, to = from)
 }
 
-case class AuctionGiveUp(from: Login, to: Login) extends GameMessage
+case class GiveUpAuction(from: Login, to: Login) extends GameMessage
 case class SelectedTalone(from: Login, to: Login, taloneNo: Int) extends GameMessage
 case class TaloneCards(from: Login, to: Login, talone: Talone) extends GameMessage
 case class DiscardedCards(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
-case class PutCard(from: Login, to: Login, card: Card) extends GameMessage
+case class PutCard(from: Login, to: Login, card: Card, trump: Boolean = false) extends GameMessage
 

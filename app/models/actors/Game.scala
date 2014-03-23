@@ -1,7 +1,9 @@
 package models.actors
 
 import akka.actor.{ActorRef, Actor, Props, LoggingFSM}
-import models.{ThousandGame, Card}
+import models._
+import scala.Some
+import models.Card
 
 /**
  * @author Marcin Burczak
@@ -9,9 +11,11 @@ import models.{ThousandGame, Card}
  */
 
 sealed trait State
-case object NewDeal extends State
+case object Auction extends State
 case object SelectingTalone extends State
 case object DiscardingTwoCards extends State
+case object PuttingFirstCardOnTable extends State
+case object PuttingSecondCardOnTable extends State
 
 case class Player(player: ActorRef,
                   cards: Seq[Card],
@@ -19,25 +23,76 @@ case class Player(player: ActorRef,
                   dealScore: Int = 0) {
   def addTalone(talone: Seq[Card]): Player =
     copy(cards = cards ++ talone)
+
+  def hasKingWithColor(color: Color): Boolean =
+    cards.exists(_ == Card(color, King))
+
+  def hasQueenWithColor(color: Color): Boolean =
+    cards.exists(_ == Card(color, Queen))
+
+  def remove(card: Card): Player = 
+    copy(cards = cards.filterNot(_ == card))
 }
 
 case class GameData(active: Player,
-                    pasive: Player,
+                    passive: Player,
                     talone1: Seq[Card],
                     talone2: Seq[Card],
-                    auction: Int = 0) {
-  def swapPlayers = copy(active = pasive, pasive = active)
+                    auction: Int = 100,
+                    selectedTalone: Option[Int] = None,
+                    firstCardOnTable: Option[Card] = None,
+                    secondCardOnTable: Option[Card] = None,
+                    trump: Option[Color] = None) {
 
-  def oponent = pasive.player
+  def swapPlayers = copy(active = passive, passive = active)
 
-  def withAuction(auction: Int) =
-    copy(auction = auction)
+  def oponent = passive.player
+
+  def raiseAuction(value: Int) =
+    copy(auction = auction + value)
 
   def selectTalone(no: Int) =
-    copy(active = active.addTalone(taloneOf(no)))
+    copy(active = active.addTalone(taloneOf(no)),
+         selectedTalone = Some(no))
 
   def taloneOf(no: Int): Seq[Card] =
     if (no == 0) talone1 else talone2
+
+  def isActivePlayer(sender: ActorRef): Boolean =
+    sender == active.player
+
+  def activePlayer: ActorRef = active.player
+
+  def passivePlayer: ActorRef = passive.player
+
+  def discardCards(cards: Seq[Card]) =
+    if (selectedTalone.get  == 0) copy(talone1 = cards)
+    else copy(talone2 = cards)
+
+  def putFirstCard(card: Card) =
+    copy(active = active.remove(card),
+         firstCardOnTable = Some(card),
+         trump = trumpOption(card))
+
+  def putSecondCard(secondCard: Card) = {
+    val newActive = active.remove(secondCard)
+
+    //TODO
+//    val firstCard = firstCardOnTable.get
+//    if (firstCard.color == secondCard.color) {
+//      if (ThousandGame.cardValue(firstCard.figure) > ThousandGame.cardValue(secondCard.figure))
+//      else
+//    } else {
+//
+//    }
+
+    copy(secondCardOnTable = Some(secondCard))
+  }
+
+  def trumpOption(card: Card): Option[Color] =
+    if ((card.figure == Queen && active.hasKingWithColor(card.color)) ||
+        (card.figure == King && active.hasQueenWithColor(card.color))) Some(card.color)
+    else None
 }
 
 object GameData {
@@ -57,38 +112,52 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
 
   private val gameData = GameData(actor1, actor2)
   actor1 ! gameData.active.cards
-  actor2 ! gameData.pasive.cards
+  actor2 ! gameData.passive.cards
 
-  startWith(NewDeal, gameData)
+  startWith(Auction, gameData)
 
-  when(NewDeal) {
-    case Event(AuctionGiveUp(from, to), data) => {
-      val oponent = data.pasive.player
-      oponent ! YourTurn(from, to)
+  when(Auction) {
+    case Event(GiveUpAuction(from, to), data) if (valid) => {
+      data.passivePlayer ! YourTurn(from, to)
       goto(SelectingTalone) using data.swapPlayers
     }
-    case Event(a: Auction, data) => {
-      val oponent = data.pasive.player
-      oponent ! a.switch
-      stay using data.withAuction(a.auction).swapPlayers
+    case Event(a: RaiseAuction, data) if (valid) => {
+      data.passivePlayer ! a.swapFromTo
+      stay using data.raiseAuction(a.value).swapPlayers
     }
   }
 
   when(SelectingTalone) {
-    case Event(no: Int, data) => {
-      val newGameData = data.selectTalone(no)
-      goto(DiscardingTwoCards) using(newGameData) replying(newGameData.active.cards)
+    case Event(SelectedTalone(from, to, no), data) if (valid) => {
+      val talone = Talone(no, data.taloneOf(no))
+      data.activePlayer ! TaloneCards(to, from, talone)
+      data.passivePlayer ! TaloneCards(from, to, talone)
+      goto(DiscardingTwoCards) using data.selectTalone(no)
     }
   }
 
   when(DiscardingTwoCards) {
-    case Event(no: Int, data) => {
-      println(data)
-      stay
+    case Event(DiscardedCards(_, _, cards), data) if (valid) => {
+      goto(PuttingFirstCardOnTable) using data.discardCards(cards)
+    }
+  }
+
+  when(PuttingFirstCardOnTable) {
+    case Event(pc @ PutCard(from, to, card, _), data) if (valid) => {
+      data.passivePlayer ! pc.copy(trump = data.trumpOption(card).isDefined)
+      goto(PuttingSecondCardOnTable) using data.putFirstCard(card).swapPlayers
+    }
+  }
+
+  when(PuttingSecondCardOnTable) {
+    case Event(PutCard(from, to, card, _), data) if (valid) => {
+      goto(PuttingFirstCardOnTable) using data.putSecondCard(card)
     }
   }
 
   initialize()
+
+  def valid = stateData.isActivePlayer(sender)
 }
 
 object GameLifecycle {

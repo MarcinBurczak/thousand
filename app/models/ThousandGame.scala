@@ -14,7 +14,7 @@ object ThousandGame {
     Clube -> 60,
     Spade -> 40)
 
-  val cardValue = Map(
+  val cardValue = Map[Figure, Int](
     Ace -> 11,
     Ten -> 10,
     King -> 4,

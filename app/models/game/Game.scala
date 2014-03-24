@@ -3,6 +3,7 @@ package models.game
 import akka.actor.{ActorRef, Actor, Props, LoggingFSM}
 import models._
 import scala.Some
+import scala.concurrent.duration._
 import models.Card
 
 /**
@@ -122,7 +123,7 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   startWith(Auction, GameData(actor1, actor2))
   sendCards()
 
-  when(Auction) {
+  when(Auction, 1 minute) {
     case Event(GiveUpAuction(from, to), data) if (valid) => {
       val newGameData = data.swapPlayers.withAuctionPlayer
       newGameData.activePlayer ! YourTurn(from, to)
@@ -130,11 +131,11 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
     }
     case Event(a: RaiseAuction, data) if (valid) => {
       data.passivePlayer ! a.swapFromTo
-      stay using data.raiseAuction(a.value).swapPlayers
+      stay using data.raiseAuction(a.value).swapPlayers forMax(1 minute)
     }
   }
 
-  when(SelectingTalone) {
+  when(SelectingTalone, 1 minute) {
     case Event(SelectedTalone(from, to, no), data) if (valid) => {
       val talone = Talone(no, data.taloneOf(no))
       data.activePlayer ! TaloneCards(to, from, talone)
@@ -143,20 +144,20 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
     }
   }
 
-  when(DiscardingTwoCards) {
+  when(DiscardingTwoCards, 1 minute) {
     case Event(DiscardedCards(_, _, cards), data) if (valid) => {
       goto(PuttingFirstCardOnTable) using data.discardCards(cards)
     }
   }
 
-  when(PuttingFirstCardOnTable) {
+  when(PuttingFirstCardOnTable, 1 minute) {
     case Event(pc @ PutCard(from, to, card, _), data) if (valid) => {
       data.passivePlayer ! pc.copy(trump = data.trumpOption(card).isDefined)
       goto(PuttingSecondCardOnTable) using data.putFirstCard(card).swapPlayers
     }
   }
 
-  when(PuttingSecondCardOnTable) {
+  when(PuttingSecondCardOnTable, 1 minute) {
     case Event(PutCard(from, to, card, _), data) if (valid) => {
       val newGameData = data.putSecondCard(card)//TODO nextTour
       if (newGameData.isEndOfDeal) {

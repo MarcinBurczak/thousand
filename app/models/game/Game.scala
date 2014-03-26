@@ -17,16 +17,17 @@ case object DiscardingTwoCards extends State
 case object PuttingFirstCardOnTable extends State
 case object PuttingSecondCardOnTable extends State
 
-case class GameData(active: Player,
-                    passive: Player,
-                    talone1: Seq[Card] = Nil,
-                    talone2: Seq[Card] = Nil,
-                    auction: Int = 100,
-                    auctionPlayer: Option[Player] = None,
-                    selectedTalone: Option[Int] = None,
-                    firstCardOnTable: Option[Card] = None,
-                    secondCardOnTable: Option[Card] = None,
-                    trump: Option[Color] = None) {
+case class GameData(
+  active: Player,
+  passive: Player,
+  talone1: Seq[Card] = Nil,
+  talone2: Seq[Card] = Nil,
+  auction: Int = 100,
+  auctionPlayer: Option[Player] = None,
+  selectedTalone: Option[Int] = None,
+  firstCardOnTable: Option[Card] = None,
+  secondCardOnTable: Option[Card] = None,
+  trump: Option[Color] = None) {
 
   def swapPlayers = copy(active = passive, passive = active)
 
@@ -101,6 +102,11 @@ case class GameData(active: Player,
   def isEndOfDeal: Boolean =
     active.cards.isEmpty && passive.cards.isEmpty
 
+  val maxScore = 1000
+
+  def isEndOfGame: Boolean =
+    active.gameScore == maxScore || passive.gameScore == maxScore
+
   def withAuctionPlayer =
     copy(auctionPlayer = Some(active))
 
@@ -161,9 +167,24 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
     case Event(PutCard(from, to, card, _), data) if (valid) => {
       val newGameData = data.putSecondCard(card)//TODO nextTour
       if (newGameData.isEndOfDeal) {
-        //TODO send score and new cards
-        goto(Auction) using newGameData.withScore
-      } else goto(PuttingFirstCardOnTable) using newGameData
+        if (newGameData.isEndOfGame) {
+
+          if (newGameData.active.gameScore == newGameData.maxScore) newGameData.activePlayer ! YouWin(to, from)
+          else newGameData.activePlayer ! YouLose(to, from)
+
+          if (newGameData.passive.gameScore == newGameData.maxScore) newGameData.passivePlayer ! YouWin(from, to)
+          else newGameData.passivePlayer ! YouLose(from, to)
+
+          stop
+        } else {
+          val newGameData2 = newGameData.withScore
+          //TODO send score and new cards
+          val newGameData3 = newGameData2.withNewDeal
+          //TODO send score and new cards
+          goto(Auction) using newGameData3
+        }
+      } else
+        goto(PuttingFirstCardOnTable) using newGameData
     }
   }
 

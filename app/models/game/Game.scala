@@ -2,8 +2,9 @@ package models.game
 
 import akka.actor.{ActorRef, Actor, Props, LoggingFSM}
 import models._
-import scala.Some
 import scala.concurrent.duration._
+import scala.Some
+import models.Talone
 import models.Card
 
 /**
@@ -25,11 +26,10 @@ case class GameData(
   auction: Int = 100,
   auctionPlayer: Option[Player] = None,
   selectedTalone: Option[Int] = None,
-  firstCardOnTable: Option[Card] = None,
-  secondCardOnTable: Option[Card] = None,
   trump: Option[Color] = None) {
 
-  def swapPlayers = copy(active = passive, passive = active)
+  def swapPlayers =
+    copy(active = passive, passive = active)
 
   def raiseAuction(value: Int) =
     copy(auction = auction + value)
@@ -55,21 +55,22 @@ case class GameData(
   def putFirstCard(card: Card) = {
     val trumpOpt = trumpOption(card)
     val scoreForTrump = trumpOpt.fold(0)(ThousandGame.trump(_))
-    copy(active = active.remove(card).addDealScore(scoreForTrump),
-         firstCardOnTable = Some(card),
+    copy(active = active.put(card).addDealScore(scoreForTrump),
          trump = trumpOpt)
   }
 
   def putSecondCard(secondCard: Card) =
-    copy(active = active.remove(secondCard),
-         secondCardOnTable = Some(secondCard))
+    copy(active = active.put(secondCard))
 
   def nextTour = {
-    val firstCard = firstCardOnTable.get
-    val secondCard = secondCardOnTable.get
-    val newActive2 =
+    val firstCard = passive.currentCard.get
+    val secondCard = active.currentCard.get
+    val firstCardValue = ThousandGame.cardValue(firstCard.figure)
+    val secondCardValue = ThousandGame.cardValue(secondCard.figure)
+
+    val newActive =
       if (firstCard.color == secondCard.color) {
-        if (ThousandGame.cardValue(firstCard.figure) > ThousandGame.cardValue(secondCard.figure)) passive
+        if (firstCardValue > secondCardValue) passive
         else active
       } else {
         if (trump.isEmpty) passive
@@ -78,6 +79,10 @@ case class GameData(
           else passive
         }
       }
+    val newPassive = if (newActive == active) passive else active
+
+    copy(active = newActive.addDealScore(firstCardValue + secondCardValue),
+         passive = newPassive)
   }
 
   def trumpOption(card: Card): Option[Color] =
@@ -87,15 +92,13 @@ case class GameData(
 
   def withNewDeal = {
     val pack = ThousandGame.shufflePack()
-    copy(active = active.copy(cards = pack.take(10)),
-         passive = passive.copy(cards = pack.slice(10, 20)),
+    copy(active = active.newDeal(pack.take(10)),
+         passive = passive.newDeal(pack.slice(10, 20)),
          talone1 = pack.slice(20, 22),
          talone2 = pack.slice(22, 24),
          auction = 100,
          auctionPlayer = None,
          selectedTalone = None,
-         firstCardOnTable = None,
-         secondCardOnTable = None,
          trump = None)
   }
 
@@ -109,11 +112,6 @@ case class GameData(
 
   def withAuctionPlayer =
     copy(auctionPlayer = Some(active))
-
-  def withScore = {
-    //TODO
-    copy()
-  }
 }
 
 object GameData {
@@ -164,31 +162,45 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   }
 
   when(PuttingSecondCardOnTable, 1 minute) {
-    case Event(PutCard(from, to, card, _), data) if (valid) => {
-      val newGameData = data.putSecondCard(card)//TODO nextTour
-      if (newGameData.isEndOfDeal) {
-        if (newGameData.isEndOfGame) {
+    case Event(pc @ PutCard(from, to, card, _), data) if (valid) => {
+      val newGameData = data.putSecondCard(card)
+      data.passivePlayer ! pc
 
-          if (newGameData.active.gameScore == newGameData.maxScore) newGameData.activePlayer ! YouWin(to, from)
-          else newGameData.activePlayer ! YouLose(to, from)
+      val newGameDataNextTour = data.nextTour
+      if (newGameDataNextTour.isEndOfDeal) {
+        //TODO add dealscore to game score is auction player win
+        if (newGameDataNextTour.isEndOfGame) endGame(newGameData, to, from)
+        else {
+          newGameDataNextTour.activePlayer ! DealScore(from, to, newGameDataNextTour.active.dealScore, newGameDataNextTour.passive.dealScore)
+          newGameDataNextTour.passivePlayer ! DealScore(from, to, newGameDataNextTour.passive.dealScore, newGameDataNextTour.active.dealScore)
 
-          if (newGameData.passive.gameScore == newGameData.maxScore) newGameData.passivePlayer ! YouWin(from, to)
-          else newGameData.passivePlayer ! YouLose(from, to)
+          val newGameDataWithNewDeal = newGameDataNextTour.withNewDeal
 
-          stop
-        } else {
-          val newGameData2 = newGameData.withScore
-          //TODO send score and new cards
-          val newGameData3 = newGameData2.withNewDeal
-          //TODO send score and new cards
-          goto(Auction) using newGameData3
+          newGameDataWithNewDeal.activePlayer ! NewGame(from, to, newGameDataWithNewDeal.active.cards)
+          newGameDataWithNewDeal.passivePlayer ! NewGame(from, to, newGameDataWithNewDeal.passive.cards)
+
+          newGameDataWithNewDeal.activePlayer ! YourTurn(from, to)
+
+          goto(Auction) using newGameDataWithNewDeal
         }
-      } else
+      } else {
+        newGameDataNextTour.activePlayer ! YourTurn(from, to)
         goto(PuttingFirstCardOnTable) using newGameData
+      }
     }
   }
 
   initialize()
+
+  def endGame(newGameData: GameData, to: Login, from: Login) = {
+    if (newGameData.active.gameScore == newGameData.maxScore) newGameData.activePlayer ! YouWin(to, from)
+    else newGameData.activePlayer ! YouLose(to, from)
+
+    if (newGameData.passive.gameScore == newGameData.maxScore) newGameData.passivePlayer ! YouWin(from, to)
+    else newGameData.passivePlayer ! YouLose(from, to)
+
+    stop
+  }
 
   def valid = stateData.isActivePlayer(sender)
 

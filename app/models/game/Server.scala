@@ -78,6 +78,7 @@ case class SelectedTalone(from: Login, to: Login, taloneNo: Int) extends GameMes
 case class TaloneCards(from: Login, to: Login, talone: Talone) extends GameMessage
 case class DiscardedCards(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
 case class PutCard(from: Login, to: Login, card: Card, trump: Boolean = false) extends GameMessage
+case class DealScore(from: Login, to: Login, myScore: Int, oponentScore: Int) extends GameMessage
 case class YouWin(from: Login, to: Login) extends GameMessage
 case class YouLose(from: Login, to: Login) extends GameMessage
 

@@ -132,41 +132,36 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   sendCards()
 
   when(Auction, 1 minute) {
-    case Event(GiveUpAuction(from, to), data) if (valid) => {
+    case Event(GiveUpAuction(from, to), data) if valid =>
       val newGameData = data.swapPlayers.withAuctionPlayer
       newGameData.activePlayer ! YourTurn(from, to)
       goto(SelectingTalone) using newGameData
-    }
-    case Event(a: RaiseAuction, data) if (valid) => {
+    case Event(a: RaiseAuction, data) if valid =>
       data.passivePlayer ! a.swapFromTo
       stay using data.raiseAuction(a.value).swapPlayers forMax(1 minute)
-    }
   }
 
   when(SelectingTalone, 1 minute) {
-    case Event(SelectedTalone(from, to, no), data) if (valid) => {
+    case Event(SelectedTalone(from, to, no), data) if valid =>
       val talone = Talone(no, data.taloneOf(no))
       data.activePlayer ! TaloneCards(to, from, talone)
       data.passivePlayer ! TaloneCards(from, to, talone)
       goto(DiscardingTwoCards) using data.selectTalone(no)
-    }
   }
 
   when(DiscardingTwoCards, 1 minute) {
-    case Event(DiscardedCards(_, _, cards), data) if (valid) => {
+    case Event(DiscardedCards(_, _, cards), data) if valid =>
       goto(PuttingFirstCardOnTable) using data.discardCards(cards)
-    }
   }
 
   when(PuttingFirstCardOnTable, 1 minute) {
-    case Event(pc @ PutCard(from, to, card, _), data) if (valid) => {
+    case Event(pc @ PutCard(from, to, card, _), data) if valid =>
       data.passivePlayer ! pc.copy(trump = data.trumpOption(card).isDefined)
       goto(PuttingSecondCardOnTable) using data.putFirstCard(card).swapPlayers
-    }
   }
 
   when(PuttingSecondCardOnTable, 1 minute) {
-    case Event(pc @ PutCard(from, to, card, _), data) if (valid) => {
+    case Event(pc @ PutCard(from, to, card, _), data) if valid =>
       val newGameData = data.putSecondCard(card)
       data.passivePlayer ! pc
 
@@ -192,7 +187,6 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
         newGameDataNextTour.activePlayer ! YourTurn(from, to)
         goto(PuttingFirstCardOnTable) using newGameData
       }
-    }
   }
 
   initialize()
@@ -204,7 +198,7 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
     if (newGameData.passive.gameScore == newGameData.maxScore) newGameData.passivePlayer ! YouWin(from, to)
     else newGameData.passivePlayer ! YouLose(from, to)
 
-    stop
+    stop()
   }
 
   def valid = stateData.isActivePlayer(sender)

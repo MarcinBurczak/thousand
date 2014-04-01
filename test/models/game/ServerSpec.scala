@@ -24,19 +24,8 @@ class ServerSpec extends Specification {
       server.tell(Login("Tomek"), client1.ref)
       server.tell(Login("Marcin"), client2.ref)
 
-      client1.expectMsg(UsersList(Seq(Login("Tomek"))))
-      client2.expectMsg(UsersList(Seq(Login("Tomek"), Login("Marcin"))))
-      client1.expectMsg(UsersList(Seq(Login("Tomek"), Login("Marcin"))))
-
-
-      //invitation //TODO: podzielic na testy jednostkowe jak?
-      server.tell(Invitation(Login("Tomek"), Login("Marcin")), client1.ref)
-      client2.expectMsg(Invitation(Login("Tomek"), Login("Marcin")))
-
-      //accept invitaiton
-      server.tell(Accept(Login("Marcin"), Login("Tomek")), client2.ref)
-      client1.expectMsgClass(classOf[NewGame])
-      client2.expectMsgClass(classOf[NewGame])
+      client1.expectMsgClass(classOf[Connected])
+      client2.expectMsgClass(classOf[Connected])
     }
   }
 }

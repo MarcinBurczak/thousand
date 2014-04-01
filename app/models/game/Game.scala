@@ -112,6 +112,10 @@ case class GameData(
 
   def withAuctionPlayer =
     copy(auctionPlayer = Some(active))
+
+  def endDeal =
+    copy(active = active.endDeal(auctionPlayer.get, auction),
+         passive = passive.endDeal(auctionPlayer.get, auction))
 }
 
 object GameData {
@@ -168,13 +172,14 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
 
       val newGameDataNextTour = data.nextTour
       if (newGameDataNextTour.isEndOfDeal) {
+        val newGameDataWithEndDeal = data.endDeal
         //TODO add dealscore to game score is auction player win
-        if (newGameDataNextTour.isEndOfGame) endGame(newGameData, to, from)
+        if (newGameDataWithEndDeal.isEndOfGame) endGame(newGameDataWithEndDeal, to, from)
         else {
-          newGameDataNextTour.activePlayer ! DealScore(from, to, newGameDataNextTour.active.dealScore, newGameDataNextTour.passive.dealScore)
-          newGameDataNextTour.passivePlayer ! DealScore(from, to, newGameDataNextTour.passive.dealScore, newGameDataNextTour.active.dealScore)
+          newGameDataWithEndDeal.activePlayer ! DealScore(from, to, newGameDataWithEndDeal.active.dealScore, newGameDataWithEndDeal.passive.dealScore)
+          newGameDataWithEndDeal.passivePlayer ! DealScore(from, to, newGameDataWithEndDeal.passive.dealScore, newGameDataWithEndDeal.active.dealScore)
 
-          val newGameDataWithNewDeal = newGameDataNextTour.withNewDeal
+          val newGameDataWithNewDeal = newGameDataWithEndDeal.withNewDeal
 
           newGameDataWithNewDeal.activePlayer ! NewGame(from, to, newGameDataWithNewDeal.active.cards)
           newGameDataWithNewDeal.passivePlayer ! NewGame(from, to, newGameDataWithNewDeal.passive.cards)

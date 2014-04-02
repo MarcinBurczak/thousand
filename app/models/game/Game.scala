@@ -1,6 +1,6 @@
 package models.game
 
-import akka.actor.{ActorRef, Actor, Props, LoggingFSM}
+import akka.actor.{ ActorRef, Actor, Props, LoggingFSM }
 import models._
 import scala.concurrent.duration._
 import scala.Some
@@ -19,14 +19,14 @@ case object PuttingFirstCardOnTable extends State
 case object PuttingSecondCardOnTable extends State
 
 case class GameData(
-  active: Player,
-  passive: Player,
-  talone1: Seq[Card] = Nil,
-  talone2: Seq[Card] = Nil,
-  auction: Int = 100,
-  auctionPlayer: Option[Player] = None,
-  selectedTalone: Option[Int] = None,
-  trump: Option[Color] = None) {
+    active: Player,
+    passive: Player,
+    talone1: Seq[Card] = Nil,
+    talone2: Seq[Card] = Nil,
+    auction: Int = 100,
+    auctionPlayer: Option[Player] = None,
+    selectedTalone: Option[Int] = None,
+    trump: Option[Color] = None) {
 
   def swapPlayers =
     copy(active = passive, passive = active)
@@ -36,7 +36,7 @@ case class GameData(
 
   def selectTalone(no: Int) =
     copy(active = active.addTalone(taloneOf(no)),
-         selectedTalone = Some(no))
+      selectedTalone = Some(no))
 
   def taloneOf(no: Int): Seq[Card] =
     if (no == 0) talone1 else talone2
@@ -49,14 +49,14 @@ case class GameData(
   def passivePlayer: ActorRef = passive.player
 
   def discardCards(cards: Seq[Card]) =
-    if (selectedTalone.get  == 0) copy(talone1 = cards)
+    if (selectedTalone.get == 0) copy(talone1 = cards)
     else copy(talone2 = cards)
 
   def putFirstCard(card: Card) = {
     val trumpOpt = trumpOption(card)
     val scoreForTrump = trumpOpt.fold(0)(ThousandGame.trump(_))
     copy(active = active.put(card).addDealScore(scoreForTrump),
-         trump = trumpOpt)
+      trump = trumpOpt)
   }
 
   def putSecondCard(secondCard: Card) =
@@ -82,24 +82,24 @@ case class GameData(
     val newPassive = if (newActive == active) passive else active
 
     copy(active = newActive.addDealScore(firstCardValue + secondCardValue),
-         passive = newPassive)
+      passive = newPassive)
   }
 
   def trumpOption(card: Card): Option[Color] =
     if ((card.figure == Queen && active.hasKingWithColor(card.color)) ||
-        (card.figure == King && active.hasQueenWithColor(card.color))) Some(card.color)
+      (card.figure == King && active.hasQueenWithColor(card.color))) Some(card.color)
     else None
 
   def withNewDeal = {
     val pack = ThousandGame.shufflePack()
     copy(active = active.newDeal(pack.take(10)),
-         passive = passive.newDeal(pack.slice(10, 20)),
-         talone1 = pack.slice(20, 22),
-         talone2 = pack.slice(22, 24),
-         auction = 100,
-         auctionPlayer = None,
-         selectedTalone = None,
-         trump = None)
+      passive = passive.newDeal(pack.slice(10, 20)),
+      talone1 = pack.slice(20, 22),
+      talone2 = pack.slice(22, 24),
+      auction = 100,
+      auctionPlayer = None,
+      selectedTalone = None,
+      trump = None)
   }
 
   def isEndOfDeal: Boolean =
@@ -115,7 +115,7 @@ case class GameData(
 
   def endDeal =
     copy(active = active.endDeal(auctionPlayer.get, auction),
-         passive = passive.endDeal(auctionPlayer.get, auction))
+      passive = passive.endDeal(auctionPlayer.get, auction))
 }
 
 object GameData {
@@ -125,8 +125,8 @@ object GameData {
 }
 
 class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
-  extends Actor
-  with LoggingFSM[State, GameData] {
+    extends Actor
+    with LoggingFSM[State, GameData] {
 
   startWith(Auction, GameData(actor1, actor2))
   sendCards()
@@ -138,7 +138,7 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
       goto(SelectingTalone) using newGameData
     case Event(a: RaiseAuction, data) if valid =>
       data.passivePlayer ! a.swapFromTo
-      stay using data.raiseAuction(a.value).swapPlayers forMax(1 minute)
+      stay using data.raiseAuction(a.value).swapPlayers forMax (1 minute)
   }
 
   when(SelectingTalone, 1 minute) {
@@ -210,5 +210,5 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
 }
 
 object GameLifecycle {
-  def props(player1: ActorRef, player2: ActorRef) = Props(classOf[GameLifecycle],  player1, player2)
+  def props(player1: ActorRef, player2: ActorRef) = Props(classOf[GameLifecycle], player1, player2)
 }

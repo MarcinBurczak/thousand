@@ -1,17 +1,17 @@
 package models.game
 
 import akka.actor.ActorRef
-import models.{Queen, King, Color, Card}
+import models.{ Queen, King, Color, Card }
 
 /**
  * @author Marcin Burczak
  * @since 23.03.14
  */
 case class Player(player: ActorRef,
-                  cards: Seq[Card] = Nil,
-                  gameScore: Int = 0,
-                  dealScore: Int = 0,
-                  currentCard: Option[Card] = None) {
+    cards: Seq[Card] = Nil,
+    gameScore: Int = 0,
+    dealScore: Int = 0,
+    currentCard: Option[Card] = None) {
   def addTalone(talone: Seq[Card]): Player =
     copy(cards = cards ++ talone)
 
@@ -23,7 +23,7 @@ case class Player(player: ActorRef,
 
   def put(card: Card): Player =
     copy(cards = cards.filterNot(_ == card),
-         currentCard = Some(card))
+      currentCard = Some(card))
 
   def addDealScore(score: Int): Player =
     copy(dealScore = dealScore + score)
@@ -42,6 +42,6 @@ case class Player(player: ActorRef,
 
   def newDeal(cards: Seq[Card]): Player =
     copy(cards = cards,
-         currentCard = None,
-         dealScore = 0)
+      currentCard = None,
+      dealScore = 0)
 }

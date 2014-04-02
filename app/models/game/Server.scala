@@ -1,9 +1,9 @@
 package models.game
 
-import akka.actor.{ActorRef, Actor}
-import models.{Talone, Card}
-import play.api.libs.iteratee.{Concurrent, Enumerator}
-import play.api.libs.json.{JsString, JsArray, Json, JsValue}
+import akka.actor.{ ActorRef, Actor }
+import models.{ Talone, Card }
+import play.api.libs.iteratee.{ Concurrent, Enumerator }
+import play.api.libs.json.{ JsString, JsArray, Json, JsValue }
 import play.api.libs.iteratee.Concurrent.Channel
 
 /**
@@ -48,7 +48,6 @@ class Server extends Actor {
     users.values.foreach(_._2.push(UsersList(users.keys.toSeq).toJson))
   }
 }
-
 
 case class Login(username: String)
 case class Connected(enumerator: Enumerator[JsValue])

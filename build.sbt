@@ -10,3 +10,9 @@ libraryDependencies ++= Seq(
 )
 
 play.Project.playScalaSettings
+
+scalariformSettings
+
+ScoverageSbtPlugin.instrumentSettings
+
+CoverallsPlugin.coverallsSettings

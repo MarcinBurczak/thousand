@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/MarcinBurczak/thousand.svg?branch=master)](https://travis-ci.org/MarcinBurczak/thousand)
+[![Coverage Status](https://coveralls.io/repos/MarcinBurczak/thousand/badge.png)](https://coveralls.io/r/MarcinBurczak/thousand)
 
 This is your new Play 2.1 application
 =====================================

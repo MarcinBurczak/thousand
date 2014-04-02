@@ -1,7 +1,7 @@
 package models.game
 
-import org.specs2.mutable.Specification
-import akka.testkit.{TestFSMRef, TestProbe, TestKit}
+import org.specs2.mutable.{ After, Specification }
+import akka.testkit.{ TestFSMRef, TestProbe, TestKit }
 import akka.actor.ActorSystem
 import org.specs2.specification.Scope
 import models.Card
@@ -12,7 +12,11 @@ import models.Card
  */
 class GameSpec extends Specification {
 
-  class Actors extends TestKit(ActorSystem("testGame")) with Scope
+  class Actors extends TestKit(ActorSystem("testGame")) with Scope with After {
+    override def after {
+      TestKit.shutdownActorSystem(system)
+    }
+  }
 
   "Game lifecycle" should {
 
@@ -40,7 +44,7 @@ class GameSpec extends Specification {
       //then
       player2.expectMsg(RaiseAuction(tomek, marcin, 10))
       game.stateData.auction === 110
-      game.stateName must be (Auction)
+      game.stateName must be(Auction)
 
       //when
       game.tell(RaiseAuction(tomek, marcin, 20), player2.ref)
@@ -48,7 +52,7 @@ class GameSpec extends Specification {
       //then
       player1.expectMsg(RaiseAuction(marcin, tomek, 20))
       game.stateData.auction === 130
-      game.stateName must be (Auction)
+      game.stateName must be(Auction)
 
       //when
       game.tell(GiveUpAuction(tomek, marcin), player1.ref)

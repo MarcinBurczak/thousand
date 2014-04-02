@@ -16,3 +16,6 @@ scalariformSettings
 ScoverageSbtPlugin.instrumentSettings
 
 CoverallsPlugin.coverallsSettings
+
+ScoverageSbtPlugin.ScoverageKeys.excludedPackages in ScoverageSbtPlugin.scoverage :=
+  "src_managed;"

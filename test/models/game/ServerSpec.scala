@@ -1,7 +1,7 @@
 package models.game
 
-import akka.actor.{ActorSystem, Props}
-import akka.testkit.{TestProbe, TestKit}
+import akka.actor.{ ActorSystem, Props }
+import akka.testkit.{ TestProbe, TestKit }
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 

@@ -11,6 +11,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")
 
 resolvers += Classpaths.sbtPluginReleases
 
-addSbtPlugin("com.sksamuel.scoverage" % "sbt-scoverage" % "0.95.1")
+addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "0.98.0")
 
 addSbtPlugin("com.sksamuel.scoverage" %% "sbt-coveralls" % "0.0.5")

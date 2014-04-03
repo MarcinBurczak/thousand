@@ -1,3 +1,5 @@
+import CoverallsPlugin.CoverallsKeys._
+
 name := "thousand"
 
 version := "1.0-SNAPSHOT"
@@ -19,3 +21,5 @@ CoverallsPlugin.coverallsSettings
 
 ScoverageSbtPlugin.ScoverageKeys.excludedPackages in ScoverageSbtPlugin.scoverage :=
   "src_managed;"
+
+coverallsTokenFile := "token"

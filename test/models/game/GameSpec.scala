@@ -63,7 +63,7 @@ class GameSpec extends Specification {
       game.stateName must be(SelectingTalone)
 
       //when
-      game.tell(SelectedTalone(tomek, marcin, 0), player2.ref)
+      game.tell(SelectTalone(tomek, marcin, 0), player2.ref)
 
       //then
       player1.expectMsgClass(classOf[TaloneCards])
@@ -71,7 +71,7 @@ class GameSpec extends Specification {
       game.stateName must be(DiscardingTwoCards)
 
       //when
-      game.tell(DiscardedCards(tomek, marcin, Seq()), player2.ref)
+      game.tell(DiscardCards(tomek, marcin, Seq()), player2.ref)
 
       //then
       player1.expectNoMsg

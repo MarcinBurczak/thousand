@@ -142,7 +142,7 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   }
 
   when(SelectingTalone, 1 minute) {
-    case Event(SelectedTalone(from, to, no), data) if valid =>
+    case Event(SelectTalone(from, to, no), data) if valid =>
       val talone = Talone(no, data.taloneOf(no))
       data.activePlayer ! TaloneCards(to, from, talone)
       data.passivePlayer ! TaloneCards(from, to, talone)
@@ -150,7 +150,7 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
   }
 
   when(DiscardingTwoCards, 1 minute) {
-    case Event(DiscardedCards(_, _, cards), data) if valid =>
+    case Event(DiscardCards(_, _, cards), data) if valid =>
       goto(PuttingFirstCardOnTable) using data.discardCards(cards)
   }
 

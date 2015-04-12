@@ -25,7 +25,7 @@ object Client {
           typ match {
             case "invite" => {
               val user = (event \ "user")(0).as[String]
-              server ! Invitation(login, Login(user))
+              server ! Invitation2(login, Login(user))
             }
             case _ => println("O nie")
           }

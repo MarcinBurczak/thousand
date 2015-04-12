@@ -6,6 +6,7 @@ import scala.concurrent.duration._
 import scala.Some
 import models.Talone
 import models.Card
+import models.game.GameLifecycle._
 
 sealed trait State
 case object Auction extends State
@@ -117,43 +118,43 @@ object GameData {
 }
 
 class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
-    extends Actor
-    with LoggingFSM[State, GameData] {
+    extends LoggingFSM[State, GameData] {
 
   startWith(Auction, GameData(actor1, actor2))
+
   sendCards()
 
   when(Auction, 1 minute) {
-    case Event(GiveUpAuction(from, to), data) if valid =>
-      val newGameData = data.swapPlayers.withAuctionPlayer
-      newGameData.activePlayer ! YourTurn(from, to)
-      goto(SelectingTalone) using newGameData
     case Event(a: RaiseAuction, data) if valid =>
-      data.passivePlayer ! a.swapFromTo
+      data.passivePlayer ! a
       stay using data.raiseAuction(a.value).swapPlayers forMax (1 minute)
+    case Event(GiveUpAuction, data) if valid =>
+      val newGameData = data.swapPlayers.withAuctionPlayer
+      newGameData.activePlayer ! YourTurn
+      goto(SelectingTalone) using newGameData
   }
 
   when(SelectingTalone, 1 minute) {
-    case Event(SelectTalone(from, to, no), data) if valid =>
+    case Event(SelectTalone(no), data) if valid =>
       val talone = Talone(no, data.taloneOf(no))
-      data.activePlayer ! TaloneCards(to, from, talone)
-      data.passivePlayer ! TaloneCards(from, to, talone)
+      data.activePlayer ! TaloneCards(talone)
+      data.passivePlayer ! TaloneCards(talone)
       goto(DiscardingTwoCards) using data.selectTalone(no)
   }
 
   when(DiscardingTwoCards, 1 minute) {
-    case Event(DiscardCards(_, _, cards), data) if valid =>
+    case Event(DiscardCards(cards), data) if valid =>
       goto(PuttingFirstCard) using data.discardCards(cards)
   }
 
   when(PuttingFirstCard, 1 minute) {
-    case Event(pc @ PutCard(from, to, card, _), data) if valid =>
+    case Event(pc @ PutCard(card, _), data) if valid =>
       data.passivePlayer ! pc.copy(trump = data.active.trumpOption(card).isDefined)
       goto(PuttingSecondCard) using data.putFirstCard(card).swapPlayers
   }
 
   when(PuttingSecondCard, 1 minute) {
-    case Event(pc @ PutCard(from, to, card, _), data) if valid =>
+    case Event(pc @ PutCard(card, _), data) if valid =>
       val newGameData = data.putSecondCard(card)
       data.passivePlayer ! pc
 
@@ -161,34 +162,34 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
       if (newGameDataNextTour.isEndOfDeal) {
         val newGameDataWithEndDeal = data.endDeal
         //TODO add dealscore to game score is auction player win
-        if (newGameDataWithEndDeal.isEndOfGame) endGame(newGameDataWithEndDeal, to, from)
+        if (newGameDataWithEndDeal.isEndOfGame) endGame(newGameDataWithEndDeal)
         else {
-          newGameDataWithEndDeal.activePlayer ! DealScore(from, to, newGameDataWithEndDeal.active.dealScore, newGameDataWithEndDeal.passive.dealScore)
-          newGameDataWithEndDeal.passivePlayer ! DealScore(from, to, newGameDataWithEndDeal.passive.dealScore, newGameDataWithEndDeal.active.dealScore)
+          newGameDataWithEndDeal.activePlayer ! DealScore(newGameDataWithEndDeal.active.dealScore, newGameDataWithEndDeal.passive.dealScore)
+          newGameDataWithEndDeal.passivePlayer ! DealScore(newGameDataWithEndDeal.passive.dealScore, newGameDataWithEndDeal.active.dealScore)
 
           val newGameDataWithNewDeal = newGameDataWithEndDeal.withNewDeal
 
-          newGameDataWithNewDeal.activePlayer ! NewGame(from, to, newGameDataWithNewDeal.active.cards)
-          newGameDataWithNewDeal.passivePlayer ! NewGame(from, to, newGameDataWithNewDeal.passive.cards)
+          newGameDataWithNewDeal.activePlayer ! NewGame(newGameDataWithNewDeal.active.cards)
+          newGameDataWithNewDeal.passivePlayer ! NewGame(newGameDataWithNewDeal.passive.cards)
 
-          newGameDataWithNewDeal.activePlayer ! YourTurn(from, to)
+          newGameDataWithNewDeal.activePlayer ! YourTurn
 
           goto(Auction) using newGameDataWithNewDeal
         }
       } else {
-        newGameDataNextTour.activePlayer ! YourTurn(from, to)
+        newGameDataNextTour.activePlayer ! YourTurn
         goto(PuttingFirstCard) using newGameData
       }
   }
 
   initialize()
 
-  def endGame(newGameData: GameData, to: Login, from: Login) = {
-    if (newGameData.active.gameScore == newGameData.maxScore) newGameData.activePlayer ! YouWin(to, from)
-    else newGameData.activePlayer ! YouLose(to, from)
+  def endGame(newGameData: GameData) = {
+    if (newGameData.active.gameScore == newGameData.maxScore) newGameData.activePlayer ! YouWin
+    else newGameData.activePlayer ! YouLose
 
-    if (newGameData.passive.gameScore == newGameData.maxScore) newGameData.passivePlayer ! YouWin(from, to)
-    else newGameData.passivePlayer ! YouLose(from, to)
+    if (newGameData.passive.gameScore == newGameData.maxScore) newGameData.passivePlayer ! YouWin
+    else newGameData.passivePlayer ! YouLose
 
     stop()
   }
@@ -203,4 +204,16 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
 
 object GameLifecycle {
   def props(player1: ActorRef, player2: ActorRef) = Props(classOf[GameLifecycle], player1, player2)
+
+  case object GiveUpAuction
+  case object YourTurn
+  case class NewGame(cards: Seq[Card])
+  case class RaiseAuction(value: Int)
+  case class SelectTalone(taloneNo: Int)
+  case class TaloneCards(talone: Talone)
+  case class DiscardCards(cards: Seq[Card])
+  case class PutCard(card: Card, trump: Boolean = false)
+  case class DealScore(myScore: Int, oponentScore: Int)
+  case object YouWin
+  case object YouLose
 }

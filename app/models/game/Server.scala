@@ -20,11 +20,11 @@ class Server extends Actor {
       pushUserList
     }
 
-    case invitation: Invitation =>
+    case invitation: Invitation2 =>
       println("Server: " + invitation)
       users(invitation.to)._2.push(invitation.toJson)
 
-    case accept: Accept => {
+    case accept: Accept2 => {
       ???
     }
 
@@ -60,20 +60,20 @@ trait GameMessage {
   val to: Login
   val toJson: JsValue = Json.obj("from" -> from.username, "to" -> to.username)
 }
-case class YourTurn(from: Login, to: Login) extends GameMessage
-case class NewGame(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
-case class Invitation(from: Login, to: Login) extends GameMessage
-case class Accept(from: Login, to: Login) extends GameMessage
-case class RaiseAuction(from: Login, to: Login, value: Int) extends GameMessage {
+case class YourTurn2(from: Login, to: Login) extends GameMessage
+case class NewGame2(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
+case class Invitation2(from: Login, to: Login) extends GameMessage
+case class Accept2(from: Login, to: Login) extends GameMessage
+case class RaiseAuction2(from: Login, to: Login, value: Int) extends GameMessage {
   def swapFromTo = copy(from = to, to = from)
 }
 
-case class GiveUpAuction(from: Login, to: Login) extends GameMessage
-case class SelectTalone(from: Login, to: Login, taloneNo: Int) extends GameMessage
-case class TaloneCards(from: Login, to: Login, talone: Talone) extends GameMessage
-case class DiscardCards(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
-case class PutCard(from: Login, to: Login, card: Card, trump: Boolean = false) extends GameMessage
-case class DealScore(from: Login, to: Login, myScore: Int, oponentScore: Int) extends GameMessage
-case class YouWin(from: Login, to: Login) extends GameMessage
-case class YouLose(from: Login, to: Login) extends GameMessage
+case class GiveUpAuction2(from: Login, to: Login) extends GameMessage
+case class SelectTalone2(from: Login, to: Login, taloneNo: Int) extends GameMessage
+case class TaloneCards2(from: Login, to: Login, talone: Talone) extends GameMessage
+case class DiscardCards2(from: Login, to: Login, cards: Seq[Card]) extends GameMessage
+case class PutCard2(from: Login, to: Login, card: Card, trump: Boolean = false) extends GameMessage
+case class DealScore2(from: Login, to: Login, myScore: Int, oponentScore: Int) extends GameMessage
+case class YouWin2(from: Login, to: Login) extends GameMessage
+case class YouLose2(from: Login, to: Login) extends GameMessage
 

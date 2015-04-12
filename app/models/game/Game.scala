@@ -7,16 +7,12 @@ import scala.Some
 import models.Talone
 import models.Card
 
-/**
- * @author Marcin Burczak
- * @since 07.03.14
- */
 sealed trait State
 case object Auction extends State
 case object SelectingTalone extends State
 case object DiscardingTwoCards extends State
-case object PuttingFirstCardOnTable extends State
-case object PuttingSecondCardOnTable extends State
+case object PuttingFirstCard extends State
+case object PuttingSecondCard extends State
 
 case class GameData(
     active: Player,
@@ -53,8 +49,9 @@ case class GameData(
     else copy(talone2 = cards)
 
   def putFirstCard(card: Card) = {
-    val trumpOpt = trumpOption(card)
-    val scoreForTrump = trumpOpt.fold(0)(ThousandGame.trump(_))
+    val trumpOpt = active.trumpOption(card)
+    val scoreForTrump = trumpOpt.map(_.trump).getOrElse(0)
+
     copy(active = active.put(card).addDealScore(scoreForTrump),
       trump = trumpOpt)
   }
@@ -65,8 +62,8 @@ case class GameData(
   def nextTour = {
     val firstCard = passive.currentCard.get
     val secondCard = active.currentCard.get
-    val firstCardValue = ThousandGame.cardValue(firstCard.figure)
-    val secondCardValue = ThousandGame.cardValue(secondCard.figure)
+    val firstCardValue = firstCard.value
+    val secondCardValue = secondCard.value
 
     val newActive =
       if (firstCard.color == secondCard.color) {
@@ -84,11 +81,6 @@ case class GameData(
     copy(active = newActive.addDealScore(firstCardValue + secondCardValue),
       passive = newPassive)
   }
-
-  def trumpOption(card: Card): Option[Color] =
-    if ((card.figure == Queen && active.hasKingWithColor(card.color)) ||
-      (card.figure == King && active.hasQueenWithColor(card.color))) Some(card.color)
-    else None
 
   def withNewDeal = {
     val pack = ThousandGame.shufflePack()
@@ -151,16 +143,16 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
 
   when(DiscardingTwoCards, 1 minute) {
     case Event(DiscardCards(_, _, cards), data) if valid =>
-      goto(PuttingFirstCardOnTable) using data.discardCards(cards)
+      goto(PuttingFirstCard) using data.discardCards(cards)
   }
 
-  when(PuttingFirstCardOnTable, 1 minute) {
+  when(PuttingFirstCard, 1 minute) {
     case Event(pc @ PutCard(from, to, card, _), data) if valid =>
-      data.passivePlayer ! pc.copy(trump = data.trumpOption(card).isDefined)
-      goto(PuttingSecondCardOnTable) using data.putFirstCard(card).swapPlayers
+      data.passivePlayer ! pc.copy(trump = data.active.trumpOption(card).isDefined)
+      goto(PuttingSecondCard) using data.putFirstCard(card).swapPlayers
   }
 
-  when(PuttingSecondCardOnTable, 1 minute) {
+  when(PuttingSecondCard, 1 minute) {
     case Event(pc @ PutCard(from, to, card, _), data) if valid =>
       val newGameData = data.putSecondCard(card)
       data.passivePlayer ! pc
@@ -185,7 +177,7 @@ class GameLifecycle(val actor1: ActorRef, val actor2: ActorRef)
         }
       } else {
         newGameDataNextTour.activePlayer ! YourTurn(from, to)
-        goto(PuttingFirstCardOnTable) using newGameData
+        goto(PuttingFirstCard) using newGameData
       }
   }
 

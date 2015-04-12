@@ -3,10 +3,6 @@ package models.game
 import akka.actor.ActorRef
 import models.{ Queen, King, Color, Card }
 
-/**
- * @author Marcin Burczak
- * @since 23.03.14
- */
 case class Player(player: ActorRef,
     cards: Seq[Card] = Nil,
     gameScore: Int = 0,
@@ -14,12 +10,6 @@ case class Player(player: ActorRef,
     currentCard: Option[Card] = None) {
   def addTalone(talone: Seq[Card]): Player =
     copy(cards = cards ++ talone)
-
-  def hasKingWithColor(color: Color): Boolean =
-    cards.exists(_ == Card(color, King))
-
-  def hasQueenWithColor(color: Color): Boolean =
-    cards.exists(_ == Card(color, Queen))
 
   def put(card: Card): Player =
     copy(cards = cards.filterNot(_ == card),
@@ -44,4 +34,16 @@ case class Player(player: ActorRef,
     copy(cards = cards,
       currentCard = None,
       dealScore = 0)
+
+  def trumpOption(card: Card): Option[Color] =
+    if ((card.figure == Queen && hasKingWithColor(card.color)) ||
+      (card.figure == King && hasQueenWithColor(card.color))) Some(card.color)
+    else None
+
+  def hasKingWithColor(color: Color): Boolean =
+    cards.contains(Card(color, King))
+
+  def hasQueenWithColor(color: Color): Boolean =
+    cards.contains(Card(color, Queen))
+
 }

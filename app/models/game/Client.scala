@@ -9,10 +9,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 import akka.util.Timeout
 import play.api.Logger
 
-/**
- * @author Marcin Burczak
- * @since 06.03.14
- */
 object Client {
 
   implicit val timeout = Timeout(1 second)

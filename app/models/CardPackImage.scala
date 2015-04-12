@@ -1,9 +1,5 @@
 package models
 
-/**
- * @author Marcin Burczak
- * @since 05.03.14
- */
 object CardPackImage {
 
   val path = "public/images/ClassicPack.jpg"

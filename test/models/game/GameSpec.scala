@@ -76,7 +76,7 @@ class GameSpec extends Specification {
       //then
       player1.expectNoMsg
       player2.expectNoMsg
-      game.stateName must be(PuttingFirstCardOnTable)
+      game.stateName must be(PuttingFirstCard)
     }
   }
 }

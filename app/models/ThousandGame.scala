@@ -2,25 +2,7 @@ package models
 
 import util.Random
 
-/**
- * @author Marcin Burczak
- * @since 05.03.14
- */
 object ThousandGame {
-
-  val trump = Map[Color, Int](
-    Heart -> 100,
-    Diamond -> 80,
-    Clube -> 60,
-    Spade -> 40)
-
-  val cardValue = Map[Figure, Int](
-    Ace -> 11,
-    Ten -> 10,
-    King -> 4,
-    Queen -> 3,
-    Jack -> 2,
-    Nine -> 0)
 
   val pack = Seq(
     Card(Heart, Ace),

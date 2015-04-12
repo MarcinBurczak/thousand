@@ -6,10 +6,6 @@ import play.api.libs.iteratee.{ Concurrent, Enumerator }
 import play.api.libs.json.{ JsString, JsArray, Json, JsValue }
 import play.api.libs.iteratee.Concurrent.Channel
 
-/**
- * @author Marcin Burczak
- * @since 06.03.14
- */
 class Server extends Actor {
 
   var users = Map[Login, (Enumerator[JsValue], Channel[JsValue])]()

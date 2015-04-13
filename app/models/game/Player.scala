@@ -1,9 +1,8 @@
 package models.game
 
-import akka.actor.ActorRef
 import models.{ Queen, King, Color, Card }
 
-case class Player(player: ActorRef,
+case class Player(login: Login,
     cards: Seq[Card] = Nil,
     gameScore: Int = 0,
     dealScore: Int = 0,

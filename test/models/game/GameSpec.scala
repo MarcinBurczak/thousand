@@ -25,7 +25,7 @@ class GameSpec extends Specification {
       //given
       val player1 = TestProbe()
       val player2 = TestProbe()
-      val game = TestFSMRef(new GameLifecycle(player1.ref, player2.ref))
+      val game = TestFSMRef(new GameLifecycle("12345678"))
 
       //when
       game.stateName must be(Auction)
@@ -65,7 +65,7 @@ class GameSpec extends Specification {
       //then
       player1.expectMsgClass(classOf[TaloneCards])
       player2.expectMsgClass(classOf[TaloneCards])
-      game.stateName must be(DiscardingTwoCards)
+      game.stateName must be(DiscardingCards)
 
       //when
       game.tell(DiscardCards(Seq()), player2.ref)
@@ -73,7 +73,7 @@ class GameSpec extends Specification {
       //then
       player1.expectNoMsg
       player2.expectNoMsg
-      game.stateName must be(PuttingFirstCard)
+      game.stateName must be(PuttingCard)
     }
   }
 }

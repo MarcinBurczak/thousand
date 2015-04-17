@@ -11,7 +11,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.2.0" % "test"
 )
 
-play.Project.playScalaSettings
+lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalariformSettings
 

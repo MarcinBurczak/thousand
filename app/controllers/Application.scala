@@ -30,7 +30,8 @@ object Application extends Controller {
     Ok(views.js.chatRoom(username))
   }
 
-  def chat(username: String) = WebSocket.async[JsValue] { request =>
-    Client.join(Login(username), server)
+  def chat(username: String) = WebSocket.acceptWithActor[String, String] { request =>
+    out =>
+      Client.props(out)
   }
 }

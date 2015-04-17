@@ -1,22 +1,16 @@
 package models.game
 
-import akka.actor.{ ActorRef, Actor }
-import models.{ Talone, Card }
-import play.api.libs.iteratee.{ Concurrent, Enumerator }
-import play.api.libs.json.{ JsString, JsArray, Json, JsValue }
-import play.api.libs.iteratee.Concurrent.Channel
+import akka.actor.{Actor, ActorRef}
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.{JsArray, JsString, JsValue, Json}
 
 class Server extends Actor {
 
-  var users = Map[Login, (Enumerator[JsValue], Channel[JsValue])]()
+  var users = Map[Login, ActorRef]()
   var games = Map[ActorRef, List[Login]]()
 
   def receive = {
     case login: Login => {
-      val inOut = Concurrent.broadcast[JsValue]
-      users += (login -> inOut)
-
-      sender ! Connected(inOut._1)
       pushUserList
     }
 
@@ -29,7 +23,7 @@ class Server extends Actor {
   }
 
   def pushUserList {
-    users.values.foreach(_._2.push(UsersList(users.keys.toSeq).toJson))
+    users.values.foreach(_.!(UsersList(users.keys.toSeq).toJson))
   }
 }
 
@@ -42,5 +36,4 @@ case class UsersList(logins: Seq[Login]) {
     "members" -> JsArray(
       logins.map(_.username).map(JsString)))
 }
-
 

@@ -23,6 +23,9 @@ case class Game(
   def activePlayer: Player =
     players(activePlayerId)
 
+  def auctionPlayer: Player =
+    players(auctionPlayerId)
+
   def addPlayer(login: Login) =
     copy(players = Player(login) :: players)
 
@@ -52,7 +55,8 @@ case class Game(
   def raiseAuction(value: Int) =
     copy(
       auction = auction + value,
-      activePlayerId = nextActivePlayerId)
+      activePlayerId = nextActivePlayerId,
+      auctionPlayerId = if (value > 0) activePlayerId else auctionPlayerId)
 
   def nextActivePlayerId: Int =
     (activePlayerId + 1) % players.size

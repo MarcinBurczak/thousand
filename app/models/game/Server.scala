@@ -1,8 +1,8 @@
 package models.game
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{ Actor, ActorRef }
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.{JsArray, JsString, JsValue, Json}
+import play.api.libs.json.{ JsArray, JsString, JsValue, Json }
 
 class Server extends Actor {
 

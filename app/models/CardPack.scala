@@ -2,7 +2,7 @@ package models
 
 import util.Random
 
-object ThousandGame {
+object CardPack {
 
   val pack = Seq(
     Card(Heart, Ace),
@@ -30,5 +30,5 @@ object ThousandGame {
     Card(Spade, Jack),
     Card(Spade, Nine))
 
-  def shufflePack() = Random.shuffle(pack)
+  def shuffle() = Random.shuffle(pack)
 }

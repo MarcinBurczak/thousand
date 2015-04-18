@@ -1,6 +1,6 @@
 package models.game
 
-import models.{ Queen, King, Color, Card }
+import models.Login
 
 case class Player(login: Login,
     cards: Seq[Card] = Nil,

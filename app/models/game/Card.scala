@@ -1,4 +1,4 @@
-package models
+package models.game
 
 sealed trait Figure {
   def value: Int = 0

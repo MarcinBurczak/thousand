@@ -1,10 +1,15 @@
 package models
 
-import akka.actor.Actor
+import akka.persistence.PersistentActor
+import models.game.GameId
 
-class GameRepository extends Actor {
+class GameRepository(id: GameId) extends PersistentActor {
 
-  def receive = {
-    case _ =>
-  }
+  override def persistenceId: String = id.value
+
+  override def preStart = GameEventBus.subscribe(context.self, id)
+
+  override def receiveRecover: Receive = ???
+
+  override def receiveCommand: Receive = ???
 }

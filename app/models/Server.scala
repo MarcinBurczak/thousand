@@ -1,4 +1,4 @@
-package models.game
+package models
 
 import akka.actor.{ Actor, ActorRef }
 import play.api.libs.iteratee.Enumerator

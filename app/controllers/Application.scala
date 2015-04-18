@@ -1,11 +1,11 @@
 package controllers
 
+import models.{ Login, Server, User }
 import play.api._
 import play.api.Play.current
 import libs.concurrent.Akka
 import libs.json.JsValue
 import play.api.mvc._
-import models.game.{ Login, Client, Server }
 import akka.actor.Props
 
 object Application extends Controller {
@@ -32,6 +32,6 @@ object Application extends Controller {
 
   def chat(username: String) = WebSocket.acceptWithActor[String, String] { request =>
     out =>
-      Client.props(out)
+      User.props(Login(username), out)
   }
 }

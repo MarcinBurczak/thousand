@@ -1,7 +1,7 @@
-package models.game
+package models
 
 import akka.actor.{ LoggingFSM, Props }
-import models.{ Card, Talone }
+import models.game.{ Card, Talone, Game, GameId }
 
 sealed trait GameState
 case object WaitingForPlayers extends GameState
@@ -25,10 +25,10 @@ case class DealScore(myScore: Int, oponentScore: Int)
 case object YouWin
 case object YouLose
 
-sealed trait GameEvent
-case class PlayerJoined(who: Login) extends GameEvent
-case class NewGameStarted(playersCards: Map[Login, Seq[Card]], activePlayer: Login) extends GameEvent
-case class AuctionRaised(by: Login, value: Int, activePlayer: Login)
+sealed trait GameEvent { def id: GameId }
+case class PlayerJoined(id: GameId, who: Login) extends GameEvent
+case class NewGameStarted(id: GameId, playersCards: Map[Login, Seq[Card]], activePlayer: Login) extends GameEvent
+case class AuctionRaised(id: GameId, by: Login, value: Int, activePlayer: Login) extends GameEvent
 
 object GameFSM {
   def props(id: GameId) = Props(classOf[GameFSM], id)
@@ -73,9 +73,9 @@ class GameFSM(id: GameId)
   initialize()
 
   onTransition {
-    case WaitingForPlayers -> WaitingForPlayers => nextStateData.players.diff(stateData.players).foreach(p => sender() ! PlayerJoined(p.login))
-    case WaitingForPlayers -> Auction => sender() ! NewGameStarted(nextStateData.players.map(p => (p.login, p.cards)).toMap, nextStateData.activePlayer.login)
-    case Auction -> Auction => sender() ! AuctionRaised(nextStateData.auctionPlayer.login, nextStateData.auction - stateData.auction, nextStateData.activePlayer.login)
+    case WaitingForPlayers -> WaitingForPlayers => nextStateData.players.diff(stateData.players).foreach(p => GameEventBus.publish(PlayerJoined(stateData.id, p.login)))
+    case WaitingForPlayers -> Auction => GameEventBus.publish(NewGameStarted(stateData.id, nextStateData.players.map(p => (p.login, p.cards)).toMap, nextStateData.activePlayer.login))
+    case Auction -> Auction => GameEventBus.publish(AuctionRaised(stateData.id, nextStateData.auctionPlayer.login, nextStateData.auction - stateData.auction, nextStateData.activePlayer.login))
   }
 
   //TODO fajnie by było jakby eventy były produkowane w onTransition, wtedy kod w blokach when byłby czysto funkcyjny

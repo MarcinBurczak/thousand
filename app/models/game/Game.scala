@@ -1,6 +1,6 @@
 package models.game
 
-import models.{ Card, _ }
+import models.Login
 
 case class GameId(value: String)
 

@@ -4,8 +4,8 @@ import org.specs2.mutable.{ After, Specification }
 import akka.testkit.{ TestFSMRef, TestProbe, TestKit }
 import akka.actor.ActorSystem
 import org.specs2.specification.Scope
-import models.Card
-import models.game.GameFSM._
+import models._
+import GameFSM._
 
 class GameFSMSpec extends Specification {
 

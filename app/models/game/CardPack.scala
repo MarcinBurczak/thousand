@@ -1,6 +1,6 @@
-package models
+package models.game
 
-import util.Random
+import scala.util.Random
 
 object CardPack {
 

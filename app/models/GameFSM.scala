@@ -1,6 +1,7 @@
 package models
 
 import akka.actor.{ LoggingFSM, Props }
+import akka.persistence.PersistentActor
 import models.game.{ Card, Talone, Game, GameId }
 
 sealed trait GameState
@@ -13,7 +14,6 @@ case object PuttingCard extends GameState
 sealed trait GameCommand { def who: Login }
 case class JoinGame(who: Login) extends GameCommand
 case class RaiseAuction(who: Login, value: Int) extends GameCommand
-case class GiveUpAuction(who: Login) extends GameCommand
 
 case object YourTurn
 case class NewGame(cards: Seq[Card])
@@ -46,12 +46,28 @@ class GameFSM(id: GameId)
       else goto(WaitingForPlayers) using newGame
   }
 
+  onTransition {
+    case WaitingForPlayers -> WaitingForPlayers =>
+      nextStateData.players.diff(stateData.players).foreach(p => GameEventBus.publish(PlayerJoined(stateData.id, p.login)))
+    case WaitingForPlayers -> Auction =>
+      GameEventBus.publish(NewGameStarted(stateData.id, nextStateData.players.map(p => (p.login, p.cards)).toMap, nextStateData.activePlayer.login))
+  }
+
+  whenUnhandled {
+    case Event(cmd: JoinGame, game) =>
+      stay().replying("Sorry ziom nie możesz dołączyć do gry")
+  }
+
   when(Auction) {
     case Event(cmd: RaiseAuction, game) if game.isActive(cmd.who) =>
-      goto(Auction) using game.raiseAuction(cmd.value)
-    case Event(cmd: GiveUpAuction, game) if game.isActive(cmd.who) =>
-      val newGameData = game.raiseAuction(0)
-      goto(SelectingTalone) using newGameData
+      val newGame = game.raiseAuction(cmd.value)
+      if (cmd.value == 0) goto(SelectingTalone) using newGame
+      else goto(Auction) using newGame
+  }
+
+  onTransition {
+    case Auction -> Auction =>
+      GameEventBus.publish(AuctionRaised(stateData.id, nextStateData.auctionPlayer.login, nextStateData.auction - stateData.auction, nextStateData.activePlayer.login))
   }
 
   when(SelectingTalone) {
@@ -70,16 +86,10 @@ class GameFSM(id: GameId)
       goto(PuttingCard) using data
   }
 
-  initialize()
-
-  onTransition {
-    case WaitingForPlayers -> WaitingForPlayers => nextStateData.players.diff(stateData.players).foreach(p => GameEventBus.publish(PlayerJoined(stateData.id, p.login)))
-    case WaitingForPlayers -> Auction => GameEventBus.publish(NewGameStarted(stateData.id, nextStateData.players.map(p => (p.login, p.cards)).toMap, nextStateData.activePlayer.login))
-    case Auction -> Auction => GameEventBus.publish(AuctionRaised(stateData.id, nextStateData.auctionPlayer.login, nextStateData.auction - stateData.auction, nextStateData.activePlayer.login))
-  }
-
   //TODO fajnie by było jakby eventy były produkowane w onTransition, wtedy kod w blokach when byłby czysto funkcyjny
   //a w onTransition byłyby efekty uboczne (w tym zapis stanu), gorzej że trzeba będzie wyłuskiwać event ze mienionych stanów
   //chociaż z drugiej strony to i lepiej bo będzie wiadomo które dane sa potrzebne
   //trzeba pamiętać aby używać goto zamiast stay jeżeli zmieniamy stan
+
+  initialize()
 }

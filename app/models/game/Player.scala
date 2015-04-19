@@ -6,7 +6,9 @@ case class Player(login: Login,
     cards: Seq[Card] = Nil,
     gameScore: Int = 0,
     dealScore: Int = 0,
-    currentCard: Option[Card] = None) {
+    currentCard: Option[Card] = None,
+    auction: Int = 100) {
+
   def addTalone(talone: Seq[Card]): Player =
     copy(cards = cards ++ talone)
 
@@ -45,4 +47,5 @@ case class Player(login: Login,
   def hasQueenWithColor(color: Color): Boolean =
     cards.contains(Card(color, Queen))
 
+  def raiseAuction(value: Int) = copy(auction = if (value == 0) 100 else auction + value)
 }

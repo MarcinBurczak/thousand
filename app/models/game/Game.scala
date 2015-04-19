@@ -11,7 +11,6 @@ case class Game(
     auctionPlayerId: Int = -1,
     talones: Seq[Seq[Card]] = Nil,
     selectedTaloneId: Int = -1,
-    auction: Int = 100,
     trump: Option[Color] = None) {
 
   def canAddPlayer(login: Login) =
@@ -44,7 +43,6 @@ case class Game(
       activePlayerId = nextActivePlayerId,
       talones = List(cards3, cards4),
       selectedTaloneId = -1,
-      auction = 100,
       trump = None
     )
   }
@@ -52,12 +50,17 @@ case class Game(
   def swapPlayers =
     this
 
-  def raiseAuction(value: Int) =
+  def raiseAuction(value: Int) = {
+    val newActivePlayer = activePlayer.raiseAuction(value)
     copy(
-      auction = auction + value,
+      players = newActivePlayer :: players.filterNot(_.login == activePlayer.login),
       activePlayerId = nextActivePlayerId,
       auctionPlayerId = if (value > 0) activePlayerId else auctionPlayerId)
 
+  }
+
   def nextActivePlayerId: Int =
     (activePlayerId + 1) % players.size
+
+  def auction = players(auctionPlayerId).auction
 }

@@ -34,6 +34,15 @@ class GameFSMSpec extends Specification {
       game.stateData.players must contain((p: Player) => p.login must be(marcin))
     }
 
+//    "replay to join game when game is already started" in new Actors {
+//      val game = TestFSMRef(new GameFSM(GameId("12345678")))
+//      game.setState(Auction, game.stateData.addPlayer(marcin).addPlayer(tomek).newDeal)
+//
+//      game ! JoinGame(marcin)
+//
+//      expectMsg("Sorry ziom nie możesz dołączyć do gry")
+//    }
+
     "go to Auction state after second player joined" in new Actors {
       val game = TestFSMRef(new GameFSM(GameId("12345678")))
       game.setState(WaitingForPlayers, game.stateData.addPlayer(marcin))

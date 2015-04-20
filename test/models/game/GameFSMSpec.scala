@@ -1,7 +1,7 @@
 package models.game
 
 import org.specs2.mutable.{ After, Specification }
-import akka.testkit.{ TestFSMRef, TestProbe, TestKit }
+import akka.testkit.{ ImplicitSender, TestFSMRef, TestProbe, TestKit }
 import akka.actor.ActorSystem
 import org.specs2.specification.Scope
 import models._
@@ -9,7 +9,7 @@ import GameFSM._
 
 class GameFSMSpec extends Specification {
 
-  class Actors extends TestKit(ActorSystem("testGame")) with Scope with After {
+  class Actors extends TestKit(ActorSystem("testGame")) with Scope with After with ImplicitSender {
     override def after {
       TestKit.shutdownActorSystem(system)
     }
@@ -34,14 +34,14 @@ class GameFSMSpec extends Specification {
       game.stateData.players must contain((p: Player) => p.login must be(marcin))
     }
 
-//    "replay to join game when game is already started" in new Actors {
-//      val game = TestFSMRef(new GameFSM(GameId("12345678")))
-//      game.setState(Auction, game.stateData.addPlayer(marcin).addPlayer(tomek).newDeal)
-//
-//      game ! JoinGame(marcin)
-//
-//      expectMsg("Sorry ziom nie możesz dołączyć do gry")
-//    }
+    "replay to join game when game is already started" in new Actors {
+      val game = TestFSMRef(new GameFSM(GameId("12345678")))
+      game.setState(Auction, game.stateData.addPlayer(marcin).addPlayer(tomek).newDeal)
+
+      game ! JoinGame(marcin)
+
+      expectMsg("Sorry ziom nie możesz dołączyć do gry")
+    }
 
     "go to Auction state after second player joined" in new Actors {
       val game = TestFSMRef(new GameFSM(GameId("12345678")))

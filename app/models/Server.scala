@@ -1,13 +1,15 @@
 package models
 
 import akka.actor.{ Actor, ActorRef }
+import models.game.GameId
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{ JsArray, JsString, JsValue, Json }
 
 class Server extends Actor {
 
   var users = Map[Login, ActorRef]()
-  var games = Map[ActorRef, List[Login]]()
+
+  var games = (1 to 100).map(_.toString).map(id => (id, context.actorOf(GameFSM.props(GameId(id)), id))).toMap
 
   def receive = {
     case login: Login => {

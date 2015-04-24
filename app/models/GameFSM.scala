@@ -48,9 +48,9 @@ class GameFSM(id: GameId)
 
   onTransition {
     case WaitingForPlayers -> WaitingForPlayers =>
-      nextStateData.players.diff(stateData.players).foreach(p => GameEventBus.publish(PlayerJoined(stateData.id, p.login)))
+      nextStateData.players.diff(stateData.players).foreach(p => self ! PlayerJoined(stateData.id, p.login))
     case WaitingForPlayers -> Auction =>
-      GameEventBus.publish(NewGameStarted(stateData.id, nextStateData.players.map(p => (p.login, p.cards)).toMap, nextStateData.activePlayer.login))
+      self ! NewGameStarted(stateData.id, nextStateData.players.map(p => (p.login, p.cards)).toMap, nextStateData.activePlayer.login)
   }
 
   whenUnhandled {
@@ -67,7 +67,7 @@ class GameFSM(id: GameId)
 
   onTransition {
     case Auction -> Auction =>
-      GameEventBus.publish(AuctionRaised(stateData.id, nextStateData.auctionPlayer.login, nextStateData.auction - stateData.auction, nextStateData.activePlayer.login))
+      self ! AuctionRaised(stateData.id, nextStateData.auctionPlayer.login, nextStateData.auction - stateData.auction, nextStateData.activePlayer.login)
   }
 
   when(SelectingTalone) {

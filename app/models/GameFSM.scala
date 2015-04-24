@@ -1,7 +1,6 @@
 package models
 
 import akka.actor.{ LoggingFSM, Props }
-import akka.persistence.PersistentActor
 import models.game.{ Card, Talone, Game, GameId }
 
 sealed trait GameState
@@ -14,10 +13,10 @@ case object PuttingCard extends GameState
 sealed trait GameCommand { def who: Login }
 case class JoinGame(who: Login) extends GameCommand
 case class RaiseAuction(who: Login, value: Int) extends GameCommand
+case class SelectTalone(who: Login, no: Int) extends GameCommand
 
 case object YourTurn
 case class NewGame(cards: Seq[Card])
-case class SelectTalone(taloneNo: Int)
 case class TaloneCards(talone: Talone)
 case class DiscardCards(cards: Seq[Card])
 case class PutCard(card: Card, trump: Boolean = false)
@@ -48,9 +47,9 @@ class GameFSM(id: GameId)
 
   onTransition {
     case WaitingForPlayers -> WaitingForPlayers =>
-      nextStateData.players.diff(stateData.players).foreach(p => self ! PlayerJoined(stateData.id, p.login))
+    // nextStateData.players.keys.diff(stateData.players.keys).foreach(p => self ! PlayerJoined(stateData.id, p.login))
     case WaitingForPlayers -> Auction =>
-      self ! NewGameStarted(stateData.id, nextStateData.players.map(p => (p.login, p.cards)).toMap, nextStateData.activePlayer.login)
+      self ! NewGameStarted(stateData.id, nextStateData.players.map(p => (p._1, p._2.cards)).toMap, nextStateData.activePlayerId)
   }
 
   whenUnhandled {
@@ -67,13 +66,12 @@ class GameFSM(id: GameId)
 
   onTransition {
     case Auction -> Auction =>
-      self ! AuctionRaised(stateData.id, nextStateData.auctionPlayer.login, nextStateData.auction - stateData.auction, nextStateData.activePlayer.login)
+      self ! AuctionRaised(stateData.id, nextStateData.auctionPlayerId, nextStateData.auction - stateData.auction, nextStateData.activePlayerId)
   }
 
   when(SelectingTalone) {
-    case Event(SelectTalone(no), data) =>
-      val talone = Talone(no, Nil)
-      goto(DiscardingCards) using data
+    case Event(cmd: SelectTalone, game) if game.isActive(cmd.who) =>
+      goto(DiscardingCards) using game.selectTalone(cmd.no)
   }
 
   when(DiscardingCards) {

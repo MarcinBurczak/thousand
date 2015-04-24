@@ -6,18 +6,26 @@ case class GameId(value: String)
 
 case class Game(
     id: GameId,
-    players: List[Player] = Nil,
-    activePlayerId: Int = -1,
-    auctionPlayerId: Int = -1,
-    talones: Seq[Seq[Card]] = Nil,
+    players: Map[Login, Player] = Map.empty,
+    activePlayerId: Login = Login("empty"),
+    auctionPlayerId: Login = Login("empty"),
+    talones: Map[Int, Seq[Card]] = Map.empty,
     selectedTaloneId: Int = -1,
     trump: Option[Color] = None) {
 
+  def selectTalone(no: Int): Game = {
+    val newActivePlayer = activePlayer.addTalone(talones(no))
+    copy(selectedTaloneId = no,
+      talones = talones - no,
+      players = players + (activePlayerId -> newActivePlayer)
+    )
+  }
+
   def canAddPlayer(login: Login) =
-    !hasMaxPlayers && !players.exists(_.login == login)
+    !hasMaxPlayers && !players.contains(login)
 
   def isActive(login: Login) =
-    activePlayer.login == login
+    activePlayerId == login
 
   def activePlayer: Player =
     players(activePlayerId)
@@ -26,7 +34,8 @@ case class Game(
     players(auctionPlayerId)
 
   def addPlayer(login: Login) =
-    copy(players = Player(login) :: players)
+    copy(activePlayerId = if (players.isEmpty) login else activePlayerId,
+      players = players + (login -> Player()))
 
   def hasMaxPlayers = players.size == 2
 
@@ -36,12 +45,13 @@ case class Game(
     val cards2 = pack.slice(10, 20)
     val cards3 = pack.slice(20, 22)
     val cards4 = pack.slice(22, 24)
-    val player1 = players(0).newDeal(cards1)
-    val player2 = players(1).newDeal(cards2)
+    val player1 = players(activePlayerId).newDeal(cards1)
+    val player2 = players(nextActivePlayerId).newDeal(cards2)
     copy(
-      players = List(player1, player2),
+      players = Map(activePlayerId -> player1, nextActivePlayerId -> player2),
       activePlayerId = nextActivePlayerId,
-      talones = List(cards3, cards4),
+      auctionPlayerId = nextActivePlayerId,
+      talones = Map(0 -> cards3, 1 -> cards4),
       selectedTaloneId = -1,
       trump = None
     )
@@ -53,14 +63,15 @@ case class Game(
   def raiseAuction(value: Int) = {
     val newActivePlayer = activePlayer.raiseAuction(value)
     copy(
-      players = newActivePlayer :: players.filterNot(_.login == activePlayer.login),
+      players = players + (activePlayerId -> newActivePlayer),
       activePlayerId = nextActivePlayerId,
-      auctionPlayerId = if (value > 0) activePlayerId else auctionPlayerId)
-
+      auctionPlayerId = if (value > 0) activePlayerId else nextActivePlayerId)
   }
 
-  def nextActivePlayerId: Int =
-    (activePlayerId + 1) % players.size
+  def nextActivePlayerId: Login =
+    players.find(k => k._1 != activePlayerId)
+      .map(_._1)
+      .getOrElse(throw new RuntimeException("Coś jest nie tak, brakuje przeciwnika"))
 
   def auction = players(auctionPlayerId).auction
 }

@@ -1,8 +1,6 @@
 package models.game
 
-import models.Login
-
-case class Player(login: Login,
+case class Player(
     cards: Seq[Card] = Nil,
     gameScore: Int = 0,
     dealScore: Int = 0,

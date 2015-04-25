@@ -14,7 +14,7 @@ case class Game(
     trump: Option[Color] = None) {
 
   def putCard(card: Card): Game = {
-    val newActivePlayer = activePlayer.putCard(card)
+    val newActivePlayer = activePlayer.put(card)
     copy(players = players + (activePlayerId -> newActivePlayer),
       activePlayerId = nextActivePlayerId)
   }

@@ -2,17 +2,13 @@ package models.game
 
 case class Player(
     cards: Seq[Card] = Nil,
+    puttedCards: List[Card] = Nil,
     gameScore: Int = 0,
     dealScore: Int = 0,
-    currentCard: Option[Card] = None,
     auction: Int = 100) {
 
   def hasCard(card: Card): Boolean =
     cards.contains(card)
-
-  def putCard(card: Card) =
-    copy(cards = cards.filterNot(_ == card),
-      currentCard = Option(card))
 
   def declare(value: Int) =
     copy(auction = value)
@@ -25,7 +21,7 @@ case class Player(
 
   def put(card: Card): Player =
     copy(cards = cards.filterNot(_ == card),
-      currentCard = Some(card))
+      puttedCards = card :: puttedCards)
 
   def addDealScore(score: Int): Player =
     copy(dealScore = dealScore + score)
@@ -44,7 +40,7 @@ case class Player(
 
   def newDeal(cards: Seq[Card]): Player =
     copy(cards = cards.sorted.reverse,
-      currentCard = None,
+      puttedCards = Nil,
       dealScore = 0)
 
   def trumpOption(card: Card): Option[Color] =

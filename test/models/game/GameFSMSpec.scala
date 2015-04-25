@@ -132,7 +132,7 @@ class GameFSMSpec extends Specification {
 
       game.stateName must be(PuttingCard)
       game.stateData.activePlayerId must be(marcin)
-      game.stateData.players(tomek).currentCard must beSome(Card(Spade, Ace))
+      game.stateData.players(tomek).puttedCards.headOption must beSome(Card(Spade, Ace))
     }
 
     "replay to inactive player who want to put card" in new Actors {
@@ -156,7 +156,7 @@ class GameFSMSpec extends Specification {
     "got to putting card when second player put card" in new Actors {
       val game = TestFSMRef(new GameFSM(GameId("12345678")))
       val marcinPlayer = Player(List(Card(Heart, Ten), Card(Heart, King), Card(Heart, Queen), Card(Diamond, Ace), Card(Diamond, Ten), Card(Diamond, Jack), Card(Clube, Ace), Card(Clube, Ten), Card(Clube, King), Card(Clube, Queen)))
-      val tomekPlayer = Player(List(Card(Heart, Ace), Card(Heart, Jack), Card(Diamond, King), Card(Diamond, Nine), Card(Clube, Jack), Card(Spade, King), Card(Spade, Queen), Card(Spade, Jack), Card(Spade, Nine)), auction = 140, currentCard = Option(Card(Spade, Ace)))
+      val tomekPlayer = Player(List(Card(Heart, Ace), Card(Heart, Jack), Card(Diamond, King), Card(Diamond, Nine), Card(Clube, Jack), Card(Spade, King), Card(Spade, Queen), Card(Spade, Jack), Card(Spade, Nine)), auction = 140, puttedCards = List(Card(Spade, Ace)))
       val stateData = Game(
         id = GameId("12345678"),
         players = Map(tomek -> marcinPlayer, marcin -> tomekPlayer),

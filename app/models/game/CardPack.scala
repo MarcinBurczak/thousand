@@ -30,5 +30,5 @@ object CardPack {
     Card(Spade, Jack),
     Card(Spade, Nine))
 
-  def shuffle() = Random.shuffle(pack)
+  def shuffle(): Seq[Card] = Random.shuffle(pack)
 }

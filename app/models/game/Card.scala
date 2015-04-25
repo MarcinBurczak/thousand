@@ -43,6 +43,9 @@ case object Heart extends Color {
   override def trump: Int = 100
 }
 
-case class Card(color: Color, figure: Figure) {
+case class Card(color: Color, figure: Figure) extends Ordered[Card] {
   def value = figure.value
+
+  override def compare(that: Card): Int =
+    (color.trump + figure.value) - (that.color.trump + that.figure.value)
 }

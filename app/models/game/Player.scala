@@ -7,6 +7,19 @@ case class Player(
     currentCard: Option[Card] = None,
     auction: Int = 100) {
 
+  def hasCard(card: Card): Boolean =
+    cards.contains(card)
+
+  def putCard(card: Card) =
+    copy(cards = cards.filterNot(_ == card),
+      currentCard = Option(card))
+
+  def declare(value: Int) =
+    copy(auction = value)
+
+  def discardCards(discardedCards: Seq[Card]) =
+    copy(cards = cards.filterNot(c => discardedCards.contains(c)))
+
   def addTalone(talone: Seq[Card]): Player =
     copy(cards = (cards ++ talone).sorted.reverse)
 

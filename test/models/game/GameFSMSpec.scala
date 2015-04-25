@@ -22,6 +22,7 @@ class GameFSMSpec extends Specification {
 
     "waiting for players after creation" in new Actors {
       val game = TestFSMRef(new GameFSM(GameId("12345678")))
+
       game.stateName must be(WaitingForPlayers)
     }
 
@@ -88,8 +89,87 @@ class GameFSMSpec extends Specification {
       game.stateName must be(DiscardingCards)
       game.stateData.selectedTaloneId must_== 0
       game.stateData.activePlayerId must be(tomek)
-      game.stateData.talones.size must_== 1
-      game.stateData.activePlayer.cards.size must_== 12
+      game.stateData.talones must have size (1)
+      game.stateData.activePlayer.cards must have size (12)
+    }
+
+    "discarding cards and go to declaration state" in new Actors {
+      val game = TestFSMRef(new GameFSM(GameId("12345678")))
+      game.setState(DiscardingCards, game.stateData.addPlayer(marcin).addPlayer(tomek).newDeal.selectTalone(0))
+      val discardCards = DiscardCards(tomek, game.stateData.activePlayer.cards.take(2))
+
+      game ! discardCards
+
+      game.stateName must be(Declaration)
+      game.stateData.talones(0) must_== discardCards.cards
+      game.stateData.activePlayer.cards must have size (10)
+    }
+
+    "go to putting card after declaration" in new Actors {
+      val game = TestFSMRef(new GameFSM(GameId("12345678")))
+      game.setState(Declaration, game.stateData.addPlayer(marcin).addPlayer(tomek).newDeal)
+
+      game ! Declare(tomek, 140)
+
+      game.stateName must be(PuttingCard)
+      game.stateData.auction must_== 140
+    }
+
+    "go to putting card after first player put card" in new Actors {
+      val game = TestFSMRef(new GameFSM(GameId("12345678")))
+      val marcinPlayer = Player(List(Card(Heart, Ten), Card(Heart, King), Card(Heart, Queen), Card(Diamond, Ace), Card(Diamond, Ten), Card(Diamond, Jack), Card(Clube, Ace), Card(Clube, Ten), Card(Clube, King), Card(Clube, Queen)))
+      val tomekPlayer = Player(List(Card(Heart, Ace), Card(Heart, Jack), Card(Diamond, King), Card(Diamond, Nine), Card(Clube, Jack), Card(Spade, Ace), Card(Spade, King), Card(Spade, Queen), Card(Spade, Jack), Card(Spade, Nine)), auction = 140)
+      val stateData = Game(
+        id = GameId("12345678"),
+        players = Map(tomek -> marcinPlayer, marcin -> tomekPlayer),
+        activePlayerId = tomek,
+        auctionPlayerId = tomek,
+        talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
+        selectedTaloneId = 0)
+      game.setState(PuttingCard, stateData)
+
+      game ! PutCard(tomek, Card(Spade, Ace))
+
+      game.stateName must be(PuttingCard)
+      game.stateData.activePlayerId must be(marcin)
+      game.stateData.players(tomek).currentCard must beSome(Card(Spade, Ace))
+    }
+
+    "replay to inactive player who want to put card" in new Actors {
+      val game = TestFSMRef(new GameFSM(GameId("12345678")))
+      val marcinPlayer = Player(List(Card(Heart, Ten), Card(Heart, King), Card(Heart, Queen), Card(Diamond, Ace), Card(Diamond, Ten), Card(Diamond, Jack), Card(Clube, Ace), Card(Clube, Ten), Card(Clube, King), Card(Clube, Queen)))
+      val tomekPlayer = Player(List(Card(Heart, Ace), Card(Heart, Jack), Card(Diamond, King), Card(Diamond, Nine), Card(Clube, Jack), Card(Spade, Ace), Card(Spade, King), Card(Spade, Queen), Card(Spade, Jack), Card(Spade, Nine)), auction = 140)
+      val stateData = Game(
+        id = GameId("12345678"),
+        players = Map(tomek -> marcinPlayer, marcin -> tomekPlayer),
+        activePlayerId = tomek,
+        auctionPlayerId = tomek,
+        talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
+        selectedTaloneId = 0)
+      game.setState(PuttingCard, stateData)
+
+      game ! PutCard(marcin, Card(Diamond, Ace))
+
+      expectMsg("Sorry ziom nie twoja kolej")
+    }
+
+    "got to putting card when second player put card" in new Actors {
+      val game = TestFSMRef(new GameFSM(GameId("12345678")))
+      val marcinPlayer = Player(List(Card(Heart, Ten), Card(Heart, King), Card(Heart, Queen), Card(Diamond, Ace), Card(Diamond, Ten), Card(Diamond, Jack), Card(Clube, Ace), Card(Clube, Ten), Card(Clube, King), Card(Clube, Queen)))
+      val tomekPlayer = Player(List(Card(Heart, Ace), Card(Heart, Jack), Card(Diamond, King), Card(Diamond, Nine), Card(Clube, Jack), Card(Spade, King), Card(Spade, Queen), Card(Spade, Jack), Card(Spade, Nine)), auction = 140, currentCard = Option(Card(Spade, Ace)))
+      val stateData = Game(
+        id = GameId("12345678"),
+        players = Map(tomek -> marcinPlayer, marcin -> tomekPlayer),
+        activePlayerId = marcin,
+        auctionPlayerId = tomek,
+        talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
+        selectedTaloneId = 0)
+      game.setState(PuttingCard, stateData)
+
+      game ! PutCard(marcin, Card(Heart, Queen))
+
+      game.stateName must be(PuttingCard)
+      game.stateData.activePlayerId must be(tomek)
     }
   }
 }

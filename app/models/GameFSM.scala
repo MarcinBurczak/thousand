@@ -8,18 +8,20 @@ case object WaitingForPlayers extends GameState
 case object Auction extends GameState
 case object SelectingTalone extends GameState
 case object DiscardingCards extends GameState
+case object Declaration extends GameState
 case object PuttingCard extends GameState
 
 sealed trait GameCommand { def who: Login }
 case class JoinGame(who: Login) extends GameCommand
 case class RaiseAuction(who: Login, value: Int) extends GameCommand
 case class SelectTalone(who: Login, no: Int) extends GameCommand
+case class DiscardCards(who: Login, cards: Seq[Card]) extends GameCommand
+case class Declare(who: Login, value: Int) extends GameCommand
+case class PutCard(who: Login, card: Card) extends GameCommand
 
 case object YourTurn
 case class NewGame(cards: Seq[Card])
 case class TaloneCards(talone: Talone)
-case class DiscardCards(cards: Seq[Card])
-case class PutCard(card: Card, trump: Boolean = false)
 case class DealScore(myScore: Int, oponentScore: Int)
 case object YouWin
 case object YouLose
@@ -52,13 +54,8 @@ class GameFSM(id: GameId)
       self ! NewGameStarted(stateData.id, nextStateData.players.map(p => (p._1, p._2.cards)).toMap, nextStateData.activePlayerId)
   }
 
-  whenUnhandled {
-    case Event(cmd: JoinGame, game) =>
-      stay().replying("Sorry ziom nie możesz dołączyć do gry")
-  }
-
   when(Auction) {
-    case Event(cmd: RaiseAuction, game) if game.isActive(cmd.who) =>
+    case Event(cmd: RaiseAuction, game) if valid(cmd) =>
       val newGame = game.raiseAuction(cmd.value)
       if (cmd.value == 0) goto(SelectingTalone) using newGame
       else goto(Auction) using newGame
@@ -70,18 +67,23 @@ class GameFSM(id: GameId)
   }
 
   when(SelectingTalone) {
-    case Event(cmd: SelectTalone, game) if game.isActive(cmd.who) =>
+    case Event(cmd: SelectTalone, game) if valid(cmd) =>
       goto(DiscardingCards) using game.selectTalone(cmd.no)
   }
 
   when(DiscardingCards) {
-    case Event(DiscardCards(cards), data) =>
-      goto(PuttingCard) using data
+    case Event(cmd: DiscardCards, game) if valid(cmd) =>
+      goto(Declaration) using game.putInTalone(cmd.cards)
+  }
+
+  when(Declaration) {
+    case Event(cmd: Declare, game) if valid(cmd) =>
+      goto(PuttingCard) using game.declare(cmd.value)
   }
 
   when(PuttingCard) {
-    case Event(pc @ PutCard(card, _), data) =>
-      goto(PuttingCard) using data
+    case Event(cmd: PutCard, game) if valid(cmd) =>
+      goto(PuttingCard) using game.putCard(cmd.card)
   }
 
   //TODO fajnie by było jakby eventy były produkowane w onTransition, wtedy kod w blokach when byłby czysto funkcyjny
@@ -89,5 +91,15 @@ class GameFSM(id: GameId)
   //chociaż z drugiej strony to i lepiej bo będzie wiadomo które dane sa potrzebne
   //trzeba pamiętać aby używać goto zamiast stay jeżeli zmieniamy stan
 
+  whenUnhandled {
+    case Event(cmd: JoinGame, game) =>
+      stay().replying("Sorry ziom nie możesz dołączyć do gry")
+    case Event(cmd: GameCommand, game) if !valid(cmd) =>
+      stay().replying("Sorry ziom nie twoja kolej")
+  }
+
   initialize()
+
+  def valid(cmd: GameCommand): Boolean =
+    stateData.isActive(cmd.who) //TODO dodać bardziej szczegółową walidację np. game.activePlayer.hasCard(cmd.card)
 }

@@ -13,6 +13,23 @@ case class Game(
     selectedTaloneId: Int = -1,
     trump: Option[Color] = None) {
 
+  def putCard(card: Card): Game = {
+    val newActivePlayer = activePlayer.putCard(card)
+    copy(players = players + (activePlayerId -> newActivePlayer),
+      activePlayerId = nextActivePlayerId)
+  }
+
+  def declare(value: Int): Game = {
+    val newActivePlayer = activePlayer.declare(value)
+    copy(players = players + (activePlayerId -> newActivePlayer))
+  }
+
+  def putInTalone(cards: Seq[Card]): Game = {
+    val newActivePlayer = activePlayer.discardCards(cards)
+    copy(talones = talones + (selectedTaloneId -> cards),
+      players = players + (activePlayerId -> newActivePlayer))
+  }
+
   def selectTalone(no: Int): Game = {
     val newActivePlayer = activePlayer.addTalone(talones(no))
     copy(selectedTaloneId = no,
@@ -56,9 +73,6 @@ case class Game(
       trump = None
     )
   }
-
-  def swapPlayers =
-    this
 
   def raiseAuction(value: Int) = {
     val newActivePlayer = activePlayer.raiseAuction(value)

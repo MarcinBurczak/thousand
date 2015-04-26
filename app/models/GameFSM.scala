@@ -42,16 +42,20 @@ class GameFSM(id: GameId)
 
   when(WaitingForPlayers) {
     case Event(cmd: JoinGame, game) if game.canAddPlayer(cmd.who) =>
+      val login = cmd.who
+      context.actorOf(PlayerView.props(id, login, sender()), login.username)
+      publish(PlayerJoined(game.id, login))
+
       val newGame = game.addPlayer(cmd.who)
       if (newGame.hasMaxPlayers) goto(Auction) using newGame.newDeal
       else goto(WaitingForPlayers) using newGame
   }
 
   onTransition {
-    case WaitingForPlayers -> WaitingForPlayers =>
-    // nextStateData.players.keys.diff(stateData.players.keys).foreach(p => self ! PlayerJoined(stateData.id, p.login))
+    case WaitingForPlayers -> WaitingForPlayers => //https://github.com/akka/akka/issues/13970
+      log.info("Nie działa")
     case WaitingForPlayers -> Auction =>
-      self ! NewGameStarted(stateData.id, nextStateData.players.map(p => (p._1, p._2.cards)).toMap, nextStateData.activePlayerId)
+      publish(NewGameStarted(stateData.id, nextStateData.players.map(p => (p._1, p._2.cards)).toMap, nextStateData.activePlayerId))
   }
 
   when(Auction) {
@@ -102,4 +106,11 @@ class GameFSM(id: GameId)
 
   def valid(cmd: GameCommand): Boolean =
     stateData.isActive(cmd.who) //TODO dodać bardziej szczegółową walidację np. game.activePlayer.hasCard(cmd.card)
+
+  override def preStart() = {
+    context.actorOf(GameRepo.props(id), "repo")
+  }
+
+  def publish(event: GameEvent) =
+    context.children.foreach(_ ! event)
 }

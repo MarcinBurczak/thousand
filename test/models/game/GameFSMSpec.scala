@@ -171,5 +171,13 @@ class GameFSMSpec extends Specification {
       game.stateName must be(PuttingCard)
       game.stateData.activePlayerId must be(tomek)
     }
+
+    "receive published event" in new Actors {
+      val gameFSM = system.actorOf(GameFSM.props(GameId("12345678")), "12345678")
+
+      gameFSM ! JoinGame(marcin)
+
+      expectMsg(PlayerJoined(GameId("12345678"), marcin))
+    }
   }
 }

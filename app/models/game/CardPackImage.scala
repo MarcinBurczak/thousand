@@ -24,4 +24,7 @@ object CardPackImage {
     Three -> 357,
     Two -> 178,
     Ace -> 0)
+
+  val reverseX = 357
+  val reverseY = 1036
 }

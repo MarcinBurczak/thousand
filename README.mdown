@@ -1,7 +1,14 @@
 [![Build Status](https://travis-ci.org/MarcinBurczak/thousand.svg?branch=master)](https://travis-ci.org/MarcinBurczak/thousand)
 [![Coverage Status](https://coveralls.io/repos/MarcinBurczak/thousand/badge.png)](https://coveralls.io/r/MarcinBurczak/thousand)
 
-This is your new Play 2.1 application
+Thousand card game
 =====================================
+Rules:
+http://www.pagat.com/marriage/1000.html
 
-This file will be packaged with your application, when using `play dist`.
+Domain actors:
+**User** represent connected User, read and write Json messages to WebSocket
+**Games** games list
+**GameFSM** finite state machine with game logic, create GameRepo and PlayerView actors as children, process game commands and publish events
+**GameRepo** repository to persist game events
+**PlayerView** represent User in concrete game, react to game events

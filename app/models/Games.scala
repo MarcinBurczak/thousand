@@ -5,11 +5,11 @@ import models.game.GameId
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{ JsArray, JsString, JsValue, Json }
 
-class Server extends Actor {
+class Games extends Actor {
 
   var users = Map[Login, ActorRef]()
 
-  var games = (1 to 100).map(_.toString).map(id => (id, context.actorOf(GameFSM.props(GameId(id)), id))).toMap
+  (1 to 100).map(id => context.actorOf(GameFSM.props(GameId(id.toString))))
 
   def receive = {
     case login: Login => {

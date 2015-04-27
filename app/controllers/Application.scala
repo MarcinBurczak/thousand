@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ Login, Server, User }
+import models.{ Login, Games, User }
 import play.api._
 import play.api.Play.current
 import libs.concurrent.Akka
@@ -10,7 +10,7 @@ import akka.actor.Props
 
 object Application extends Controller {
 
-  lazy val server = Akka.system.actorOf(Props[Server])
+  lazy val server = Akka.system.actorOf(Props[Games])
 
   def index = Action {
     Ok(views.html.index("Your new application is ready."))

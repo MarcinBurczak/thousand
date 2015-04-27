@@ -111,6 +111,8 @@ class GameFSM(id: GameId)
     context.actorOf(GameRepo.props(id), "repo")
   }
 
-  def publish(event: GameEvent) =
+  def publish(event: GameEvent) = {
+    context.parent ! event
     context.children.foreach(_ ! event)
+  }
 }

@@ -7,8 +7,13 @@ Rules:
 http://www.pagat.com/marriage/1000.html
 
 Domain actors:
+
 1. **User** represent connected User, read and write Json messages to WebSocket
+
 2. **Games** games list
+
 3. **GameFSM** finite state machine with game logic, create GameRepo and PlayerView actors as children, process game commands and publish events
+
 4. **GameRepo** repository to persist game events
+
 5. **PlayerView** represent User in concrete game, react to game events

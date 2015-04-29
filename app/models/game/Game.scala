@@ -15,8 +15,27 @@ case class Game(
 
   def putCard(card: Card): Game = {
     val newActivePlayer = activePlayer.put(card)
+    val oponent = players(nextActivePlayerId)
+    val newNextActivePlayerId =
+      if (newActivePlayer.puttedCards.size == oponent.puttedCards.size) {
+        if (card.color == oponent.puttedCards.head.color) {
+          if (card.value > oponent.puttedCards.head.value) {
+            activePlayerId
+          } else {
+            nextActivePlayerId
+          }
+        } else {
+          if (trump.exists(_ == card.color)) {
+            activePlayerId
+          } else {
+            nextActivePlayerId
+          }
+        }
+      } else {
+        nextActivePlayerId
+      }
     copy(players = players + (activePlayerId -> newActivePlayer),
-      activePlayerId = nextActivePlayerId)
+      activePlayerId = newNextActivePlayerId)
   }
 
   def declare(value: Int): Game = {

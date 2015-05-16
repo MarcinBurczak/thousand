@@ -13,6 +13,7 @@ case object Play extends GameState
 
 sealed trait GameCommand { def who: Login }
 case class JoinGame(who: Login) extends GameCommand
+case class Start(who: Login) extends GameCommand
 case class RaiseAuction(who: Login, value: Int) extends GameCommand
 case class SelectTalone(who: Login, no: Int) extends GameCommand
 case class DiscardCards(who: Login, cards: Seq[Card]) extends GameCommand
@@ -45,10 +46,10 @@ class GameFSM(id: GameId)
       val login = cmd.who
       context.actorOf(PlayerView.props(id, login, sender()), login.username)
       publish(PlayerJoined(game.id, login))
-
       val newGame = game.addPlayer(cmd.who)
-      if (newGame.hasMaxPlayers) goto(Auction) using newGame.newDeal
-      else goto(WaitingForPlayers) using newGame
+      goto(WaitingForPlayers) using newGame
+    case Event(cmd: Start, game) =>
+      goto(Auction) using game.newDeal
   }
 
   onTransition {
@@ -61,12 +62,13 @@ class GameFSM(id: GameId)
   when(Auction) {
     case Event(cmd: RaiseAuction, game) if valid(cmd) =>
       val newGame = game.raiseAuction(cmd.value)
+      publish(AuctionRaised(id, cmd.who, cmd.value, newGame.activePlayerId))
       if (cmd.value == 0) goto(SelectingTalone) using newGame
       else goto(Auction) using newGame
   }
 
   onTransition {
-    case Auction -> Auction =>
+    case Auction -> Auction => //https://github.com/akka/akka/issues/13970 przejscie z tego samego stanu w ten sam nie działa ma być naprawione w 2.4
       self ! AuctionRaised(stateData.id, nextStateData.auctionPlayerId, nextStateData.auction - stateData.auction, nextStateData.activePlayerId)
   }
 

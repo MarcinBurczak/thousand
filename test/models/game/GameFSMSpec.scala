@@ -44,11 +44,11 @@ class GameFSMSpec extends Specification {
       expectMsg("Sorry ziom nie możesz dołączyć do gry")
     }
 
-    "go to Auction state after second player joined" in new Actors {
+    "go to Auction state after start" in new Actors {
       val game = TestFSMRef(new GameFSM(GameId("12345678")))
-      game.setState(WaitingForPlayers, game.stateData.addPlayer(marcin))
+      game.setState(WaitingForPlayers, game.stateData.addPlayer(marcin).addPlayer(tomek))
 
-      game ! JoinGame(tomek)
+      game ! Start(tomek)
 
       game.stateName must be(Auction)
       game.stateData.players must contain((p: (Login, Player)) => p._1 must be(marcin))

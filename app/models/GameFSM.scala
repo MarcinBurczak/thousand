@@ -9,7 +9,7 @@ case object Auction extends GameState
 case object SelectingTalone extends GameState
 case object DiscardingCards extends GameState
 case object Declaration extends GameState
-case object PuttingCard extends GameState
+case object Play extends GameState
 
 sealed trait GameCommand { def who: Login }
 case class JoinGame(who: Login) extends GameCommand
@@ -82,18 +82,13 @@ class GameFSM(id: GameId)
 
   when(Declaration) {
     case Event(cmd: Declare, game) if valid(cmd) =>
-      goto(PuttingCard) using game.declare(cmd.value)
+      goto(Play) using game.declare(cmd.value)
   }
 
-  when(PuttingCard) {
+  when(Play) {
     case Event(cmd: PutCard, game) if valid(cmd) =>
-      goto(PuttingCard) using game.putCard(cmd.card)
+      goto(Play) using game.putCard(cmd.card)
   }
-
-  //TODO fajnie by było jakby eventy były produkowane w onTransition, wtedy kod w blokach when byłby czysto funkcyjny
-  //a w onTransition byłyby efekty uboczne (w tym zapis stanu), gorzej że trzeba będzie wyłuskiwać event ze mienionych stanów
-  //chociaż z drugiej strony to i lepiej bo będzie wiadomo które dane sa potrzebne
-  //trzeba pamiętać aby używać goto zamiast stay jeżeli zmieniamy stan
 
   whenUnhandled {
     case Event(cmd: JoinGame, game) =>

@@ -16,7 +16,7 @@ case class Game(
   def putCard(card: Card): Game = {
     val newActivePlayer = activePlayer.put(card)
     val oponent = players(nextActivePlayerId)
-    val newNextActivePlayerId =
+    val trickWinner =
       if (newActivePlayer.puttedCards.size == oponent.puttedCards.size) {
         if (card.color == oponent.puttedCards.head.color) {
           if (card.value > oponent.puttedCards.head.value) {
@@ -35,7 +35,7 @@ case class Game(
         nextActivePlayerId
       }
     copy(players = players + (activePlayerId -> newActivePlayer),
-      activePlayerId = newNextActivePlayerId)
+      activePlayerId = trickWinner)
   }
 
   def declare(value: Int): Game = {

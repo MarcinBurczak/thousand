@@ -111,7 +111,7 @@ class GameFSMSpec extends Specification {
 
       game ! Declare(tomek, 140)
 
-      game.stateName must be(PuttingCard)
+      game.stateName must be(Play)
       game.stateData.auction must_== 140
     }
 
@@ -126,11 +126,11 @@ class GameFSMSpec extends Specification {
         auctionPlayerId = tomek,
         talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
         selectedTaloneId = 0)
-      game.setState(PuttingCard, stateData)
+      game.setState(Play, stateData)
 
       game ! PutCard(tomek, Card(Spade, Ace))
 
-      game.stateName must be(PuttingCard)
+      game.stateName must be(Play)
       game.stateData.activePlayerId must be(marcin)
       game.stateData.players(tomek).puttedCards.headOption must beSome(Card(Spade, Ace))
     }
@@ -146,7 +146,7 @@ class GameFSMSpec extends Specification {
         auctionPlayerId = tomek,
         talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
         selectedTaloneId = 0)
-      game.setState(PuttingCard, stateData)
+      game.setState(Play, stateData)
 
       game ! PutCard(marcin, Card(Diamond, Ace))
 
@@ -164,11 +164,11 @@ class GameFSMSpec extends Specification {
         auctionPlayerId = tomek,
         talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
         selectedTaloneId = 0)
-      game.setState(PuttingCard, stateData)
+      game.setState(Play, stateData)
 
       game ! PutCard(marcin, Card(Heart, Queen))
 
-      game.stateName must be(PuttingCard)
+      game.stateName must be(Play)
       game.stateData.activePlayerId must be(tomek)
     }
 
@@ -191,11 +191,11 @@ class GameFSMSpec extends Specification {
         auctionPlayerId = tomek,
         talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
         selectedTaloneId = 0)
-      game.setState(PuttingCard, stateData)
+      game.setState(Play, stateData)
 
       game ! PutCard(marcin, Card(Clube, Ten))
 
-      game.stateName must be(PuttingCard)
+      game.stateName must be(Play)
       game.stateData.activePlayerId must be(marcin)
     }
 
@@ -211,11 +211,11 @@ class GameFSMSpec extends Specification {
         talones = Map(0 -> List(Card(Clube, Nine), Card(Spade, Ten)), 1 -> List(Card(Heart, Nine), Card(Diamond, Queen))),
         selectedTaloneId = 0,
         trump = Option(Clube))
-      game.setState(PuttingCard, stateData)
+      game.setState(Play, stateData)
 
       game ! PutCard(marcin, Card(Clube, Ten))
 
-      game.stateName must be(PuttingCard)
+      game.stateName must be(Play)
       game.stateData.activePlayerId must be(marcin)
     }
   }
